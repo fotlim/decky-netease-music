@@ -15,7 +15,7 @@ function lineStyle(dist: number) {
   if (dist === 0) {
     return {
       opacity: 1, transform: "none", filter: "none", color: "#ffffff",
-      fontWeight: 800, textShadow: "0 0 22px rgba(236,65,65,0.6)", fontSize: 24,
+      fontWeight: 800, textShadow: "0 0 22px rgba(236,65,65,0.6)", fontSize: 28,
     } as const;
   }
   const ad = Math.abs(dist);
@@ -23,7 +23,7 @@ function lineStyle(dist: number) {
   const filter = ad >= 3 ? "blur(1.3px)" : ad === 2 ? "blur(0.6px)" : "none";
   return {
     opacity, transform: "none", filter, color: "rgba(255,255,255,0.92)",
-    fontWeight: 600, textShadow: "none", fontSize: ad === 1 ? 21 : ad === 2 ? 19 : 18,
+    fontWeight: 600, textShadow: "none", fontSize: ad === 1 ? 24 : ad === 2 ? 22 : 20,
   } as const;
 }
 
