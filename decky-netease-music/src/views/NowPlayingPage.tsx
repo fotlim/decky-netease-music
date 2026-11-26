@@ -218,11 +218,11 @@ export function NowPlayingPage(props: any = {}) {
         </Focusable>
 
         <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 28, marginTop: 12 }}>
-          <Focusable flow-children="column" style={{ width: 260, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden" }}>
-            <div style={{ width: 190, height: 190, borderRadius: 14, overflow: "hidden", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Focusable flow-children="column" style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "flex-start", overflowY: "auto", overflowX: "hidden", paddingRight: 4 }}>
+            <div style={{ width: 170, height: 170, borderRadius: 12, overflow: "hidden", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               {cover
                 ? <img src={cover} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                : <span style={{ fontSize: 60, color: "#5b6b7a" }}>♪</span>}
+                : <span style={{ fontSize: 54, color: "#5b6b7a" }}>♪</span>}
             </div>
             <div style={{ marginTop: 10, marginBottom: 2, minWidth: 0, width: "100%" }}>
               <div style={{ width: "100%", fontSize: 20, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
