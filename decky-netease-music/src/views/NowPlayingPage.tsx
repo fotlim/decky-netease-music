@@ -37,9 +37,9 @@ function SmallAction({ onClick, children }: { onClick: () => void; children: any
     >
       <div style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-        padding: "8px 16px", borderRadius: 10, boxSizing: "border-box",
+        padding: "6px 12px", borderRadius: 10, boxSizing: "border-box",
         background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)",
-        color: "#fff", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", lineHeight: 1.2,
+        color: "#fff", fontSize: 12.5, fontWeight: 500, whiteSpace: "nowrap", lineHeight: 1.2,
       }}>{children}</div>
     </Focusable>
   );
@@ -227,16 +227,16 @@ export function NowPlayingPage(props: any = {}) {
 
         <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 28, marginTop: 12 }}>
           <Focusable flow-children="column" style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden", paddingRight: 4 }}>
-            <div style={{ width: 180, height: 180, borderRadius: 12, overflow: "hidden", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ width: 150, height: 150, borderRadius: 12, overflow: "hidden", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               {cover
                 ? <img src={cover} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                : <span style={{ fontSize: 54, color: "#5b6b7a" }}>♪</span>}
+                : <span style={{ fontSize: 48, color: "#5b6b7a" }}>♪</span>}
             </div>
-            <div style={{ marginTop: 10, marginBottom: 2, minWidth: 0, width: "100%", textAlign: "center" }}>
-              <div style={{ width: "100%", fontSize: 20, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ marginTop: 8, marginBottom: 2, minWidth: 0, width: "100%", textAlign: "center" }}>
+              <div style={{ width: "100%", fontSize: 18, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {s.track?.name || "未在播放"}
               </div>
-              <div style={{ width: "100%", fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ width: "100%", fontSize: 12.5, color: "rgba(255,255,255,0.65)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {s.track?.artist || ""}{(s.track as any)?.album ? ` · ${(s.track as any).album}` : ""}
               </div>
             </div>
@@ -261,22 +261,22 @@ export function NowPlayingPage(props: any = {}) {
               <span>{fmtTime(s.currentTime)}</span><span>{fmtTime(s.duration)}</span>
             </div>
 
-            <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 8 }}>
-              <IconButton onClick={toggleLike} size={34} active={liked} label={liked ? "取消喜欢" : "喜欢"}>
-                {liked ? <FaHeart size={14} color="#ff5b5b" /> : <FaRegHeart size={14} />}
+            <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 6 }}>
+              <IconButton onClick={toggleLike} size={32} active={liked} label={liked ? "取消喜欢" : "喜欢"}>
+                {liked ? <FaHeart size={13} color="#ff5b5b" /> : <FaRegHeart size={13} />}
               </IconButton>
-              <IconButton onClick={() => player.prev()} size={36}><FaStepBackward size={15} /></IconButton>
-              <IconButton onClick={() => player.toggle()} size={54} danger>
-                {s.playing ? <FaPause size={20} /> : <FaPlay size={20} />}
+              <IconButton onClick={() => player.prev()} size={34}><FaStepBackward size={14} /></IconButton>
+              <IconButton onClick={() => player.toggle()} size={50} danger>
+                {s.playing ? <FaPause size={18} /> : <FaPlay size={18} />}
               </IconButton>
-              <IconButton onClick={() => player.next()} size={36}><FaStepForward size={15} /></IconButton>
-              <IconButton onClick={() => player.cycleMode()} size={34} active={s.mode !== "all"} label={modeLabel(s.mode)}>
+              <IconButton onClick={() => player.next()} size={34}><FaStepForward size={14} /></IconButton>
+              <IconButton onClick={() => player.cycleMode()} size={32} active={s.mode !== "all"} label={modeLabel(s.mode)}>
                 <ModeIcon mode={s.mode} />
               </IconButton>
             </Focusable>
 
             {s.track && (
-              <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 6, flexWrap: "wrap" }}>
+              <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
                 <SmallAction onClick={() => player.playNext(s.track as any)}>＋ 下一首播放</SmallAction>
                 {onOpenAlbum && s.track.albumId ? (
                   <SmallAction onClick={() => onOpenAlbum(s.track!.albumId as number)}>💿 查看专辑</SmallAction>
