@@ -244,13 +244,13 @@ export function NowPlayingPage(props: any = {}) {
 
         <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 28, marginTop: 12 }}>
           <Focusable flow-children="column" style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden", paddingRight: 4 }}>
-            <div style={{ width: 150, height: 150, borderRadius: 12, overflow: "hidden", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ width: 180, height: 180, borderRadius: 12, overflow: "hidden", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               {cover
                 ? <img src={cover} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 : <span style={{ fontSize: 48, color: "#5b6b7a" }}>♪</span>}
             </div>
             <div style={{ marginTop: 8, marginBottom: 2, minWidth: 0, width: "100%", textAlign: "center" }}>
-              <div style={{ width: "100%", fontSize: 18, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ width: "100%", fontSize: 20, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {s.track?.name || "未在播放"}
               </div>
               <div style={{ width: "100%", fontSize: 12.5, color: "rgba(255,255,255,0.65)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
