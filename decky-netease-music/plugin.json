@@ -1,0 +1,11 @@
+{
+  "name": "网易云音乐",
+  "author": "大肥鱼",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": ["music", "netease", "audio", "网易云"],
+    "description": "在 Steam Deck 游戏模式中搜索、浏览并播放网易云音乐。纯 Python 后端 + HTML5 音频，简洁、高效、低占用。",
+    "image": ""
+  }
+}
