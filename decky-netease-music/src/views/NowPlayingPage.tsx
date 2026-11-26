@@ -156,6 +156,8 @@ export function NowPlayingPage(props: any = {}) {
   const pos = Math.min(s.currentTime, dur);
   const cover = s.track?.cover || "";
   const palette = useMonetPalette(cover);
+  const seekVal = seekPreview ?? pos;
+  const pct = dur > 0 ? Math.min(100, (seekVal / dur) * 100) : 0;
 
   const onSeek = (v: number) => {
     setSeekPreview(v);
@@ -186,6 +188,9 @@ export function NowPlayingPage(props: any = {}) {
         @keyframes ncmBlob2 { 0% { transform: translate(0,0) scale(1.1); } 50% { transform: translate(-15%,18%) scale(0.9); } 100% { transform: translate(0,0) scale(1.1); } }
         @keyframes ncmBlob3 { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(10%,-15%) scale(1.2); } 100% { transform: translate(0,0) scale(1); } }
         .ncm-blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.6; mix-blend-mode: screen; will-change: transform; }
+        .ncm-range { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 999px; outline: none; cursor: pointer; margin: 0; }
+        .ncm-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.5); transition: transform .15s ease; }
+        .ncm-range::-webkit-slider-thumb:hover { transform: scale(1.2); }
       `}</style>
       {cover && (
         <img src={cover} style={{ position: "absolute", inset: -60, width: "calc(100% + 120px)", height: "calc(100% + 120px)", objectFit: "cover", filter: "blur(80px) saturate(1.35)", opacity: 0.45 }} />
@@ -233,10 +238,23 @@ export function NowPlayingPage(props: any = {}) {
               </div>
             </div>
 
-            <div style={{ width: "100%", marginTop: 6 }}>
-              <SliderField value={seekPreview ?? pos} min={0} max={dur} step={1} showValue={false} onChange={onSeek} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+            <Focusable
+              flow-children="row"
+              onGamepadDirection={(e: any) => {
+                const b = e && e.detail && e.detail.button;
+                if (b === 11) onSeek(Math.max(0, seekVal - 5));
+                else if (b === 12) onSeek(Math.min(dur, seekVal + 5));
+              }}
+              style={{ width: "100%", display: "flex", alignItems: "center", marginTop: 6 }}
+            >
+              <input
+                type="range" className="ncm-range" min={0} max={dur} step={1}
+                value={seekVal}
+                onChange={(e) => onSeek(parseFloat(e.target.value))}
+                style={{ background: `linear-gradient(to right, #ec4141 0%, #ff8a8a ${pct}%, rgba(255,255,255,0.18) ${pct}%)` }}
+              />
+            </Focusable>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginTop: 6 }}>
               <span>{fmtTime(s.currentTime)}</span><span>{fmtTime(s.duration)}</span>
             </div>
 
