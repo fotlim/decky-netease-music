@@ -33,14 +33,15 @@ function SmallAction({ onClick, children }: { onClick: () => void; children: any
     <Focusable
       onClick={onClick}
       onActivate={onClick}
-      style={{
+      style={{ borderRadius: 10, cursor: "pointer", flexShrink: 0, display: "inline-flex" }}
+    >
+      <div style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-        padding: "8px 16px", borderRadius: 10,
-        background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)",
-        color: "#fff", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap",
-        cursor: "pointer", flexShrink: 0,
-      }}
-    >{children}</Focusable>
+        padding: "8px 16px", borderRadius: 10, boxSizing: "border-box",
+        background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)",
+        color: "#fff", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", lineHeight: 1.2,
+      }}>{children}</div>
+    </Focusable>
   );
 }
 
@@ -256,7 +257,7 @@ export function NowPlayingPage(props: any = {}) {
                 style={{ background: `linear-gradient(to right, #ec4141 0%, #ff8a8a ${pct}%, rgba(255,255,255,0.18) ${pct}%)` }}
               />
             </Focusable>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginTop: 6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginTop: 6 }}>
               <span>{fmtTime(s.currentTime)}</span><span>{fmtTime(s.duration)}</span>
             </div>
 
