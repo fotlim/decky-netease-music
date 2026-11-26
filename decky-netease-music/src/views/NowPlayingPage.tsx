@@ -207,7 +207,7 @@ export function NowPlayingPage(props: any = {}) {
       <Focusable flow-children="column" style={{
         position: "relative", height: "100%", boxSizing: "border-box",
         paddingTop: "calc(env(safe-area-inset-top, 0px) + 48px)",
-        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 46px)",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 58px)",
         paddingLeft: 36, paddingRight: 36, display: "flex", flexDirection: "column",
       }}>
         <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
@@ -219,36 +219,43 @@ export function NowPlayingPage(props: any = {}) {
 
         <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 28, marginTop: 12 }}>
           <Focusable flow-children="column" style={{ width: 260, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden" }}>
-            <AlbumArt src={cover} size={200} radius={14} />
-            <div style={{ marginTop: 12, marginBottom: 4, minWidth: 0, width: "100%" }}>
-              <div style={{ width: "100%", fontSize: 22, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ width: 190, height: 190, borderRadius: 14, overflow: "hidden", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {cover
+                ? <img src={cover} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                : <span style={{ fontSize: 60, color: "#5b6b7a" }}>♪</span>}
+            </div>
+            <div style={{ marginTop: 10, marginBottom: 2, minWidth: 0, width: "100%" }}>
+              <div style={{ width: "100%", fontSize: 20, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {s.track?.name || "未在播放"}
               </div>
-              <div style={{ width: "100%", fontSize: 13.5, color: "rgba(255,255,255,0.65)", marginTop: 5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ width: "100%", fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {s.track?.artist || ""}{(s.track as any)?.album ? ` · ${(s.track as any).album}` : ""}
               </div>
             </div>
 
-            <div style={{ width: "100%", marginTop: 8 }}>
+            <div style={{ width: "100%", marginTop: 6 }}>
               <SliderField value={seekPreview ?? pos} min={0} max={dur} step={1} showValue={false} onChange={onSeek} />
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
               <span>{fmtTime(s.currentTime)}</span><span>{fmtTime(s.duration)}</span>
             </div>
 
-            <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, marginTop: 10 }}>
-              <IconButton onClick={toggleLike} size={40} active={liked} label={liked ? "取消喜欢" : "喜欢"}>
-                {liked ? <FaHeart size={16} color="#ff5b5b" /> : <FaRegHeart size={16} />}
+            <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 8 }}>
+              <IconButton onClick={toggleLike} size={34} active={liked} label={liked ? "取消喜欢" : "喜欢"}>
+                {liked ? <FaHeart size={14} color="#ff5b5b" /> : <FaRegHeart size={14} />}
               </IconButton>
-              <IconButton onClick={() => player.prev()} size={44}><FaStepBackward size={18} /></IconButton>
-              <IconButton onClick={() => player.toggle()} size={64} danger>
-                {s.playing ? <FaPause size={24} /> : <FaPlay size={24} />}
+              <IconButton onClick={() => player.prev()} size={36}><FaStepBackward size={15} /></IconButton>
+              <IconButton onClick={() => player.toggle()} size={54} danger>
+                {s.playing ? <FaPause size={20} /> : <FaPlay size={20} />}
               </IconButton>
-              <IconButton onClick={() => player.next()} size={44}><FaStepForward size={18} /></IconButton>
+              <IconButton onClick={() => player.next()} size={36}><FaStepForward size={15} /></IconButton>
+              <IconButton onClick={() => player.cycleMode()} size={34} active={s.mode !== "all"} label={modeLabel(s.mode)}>
+                <ModeIcon mode={s.mode} />
+              </IconButton>
             </Focusable>
 
             {s.track && (
-              <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 8 }}>
+              <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 6 }}>
                 <SmallAction onClick={() => player.playNext(s.track as any)}>＋ 下一首播放</SmallAction>
                 {onOpenAlbum && s.track.albumId ? (
                   <SmallAction onClick={() => onOpenAlbum(s.track!.albumId as number)}>💿 查看专辑</SmallAction>
@@ -256,17 +263,7 @@ export function NowPlayingPage(props: any = {}) {
               </Focusable>
             )}
 
-            <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-              <IconButton onClick={() => player.cycleMode()} size={30} active={s.mode !== "all"} label={modeLabel(s.mode)}>
-                <ModeIcon mode={s.mode} />
-              </IconButton>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", minWidth: 52 }}>{modeLabel(s.mode)}</span>
-              <FaVolumeUp size={13} color="rgba(255,255,255,0.6)" />
-              <div style={{ flex: 1 }}>
-                <SliderField value={Math.round(s.volume * 100)} min={0} max={100} step={1} showValue={false} onChange={(v) => player.setVolume(v / 100)} />
-              </div>
-            </Focusable>
-            {s.error && <div style={{ fontSize: 12, color: COLORS.accent, marginTop: 8 }}>{s.error}</div>}
+            {s.error && <div style={{ fontSize: 12, color: COLORS.accent, marginTop: 6 }}>{s.error}</div>}
           </Focusable>
 
           <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
