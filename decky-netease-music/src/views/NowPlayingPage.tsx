@@ -34,9 +34,11 @@ function SmallAction({ onClick, children }: { onClick: () => void; children: any
       onClick={onClick}
       onActivate={onClick}
       style={{
-        display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px",
-        borderRadius: 16, background: "rgba(255,255,255,0.1)", color: "#fff",
-        fontSize: 13, cursor: "pointer",
+        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+        padding: "8px 16px", borderRadius: 10,
+        background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)",
+        color: "#fff", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap",
+        cursor: "pointer", flexShrink: 0,
       }}
     >{children}</Focusable>
   );
@@ -273,7 +275,7 @@ export function NowPlayingPage(props: any = {}) {
             </Focusable>
 
             {s.track && (
-              <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 6 }}>
+              <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 6, flexWrap: "wrap" }}>
                 <SmallAction onClick={() => player.playNext(s.track as any)}>＋ 下一首播放</SmallAction>
                 {onOpenAlbum && s.track.albumId ? (
                   <SmallAction onClick={() => onOpenAlbum(s.track!.albumId as number)}>💿 查看专辑</SmallAction>
