@@ -1,8 +1,6 @@
-﻿_scratch/
-**/node_modules/
 node_modules/
 __pycache__/
 *.pyc
-*.map
 *.log
+*.zip
 .DS_Store

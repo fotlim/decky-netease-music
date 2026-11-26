@@ -44,7 +44,7 @@
 ## 📁 目录
 
 ```
-decky-netease-music/
+（仓库根目录即插件项目）
 ├── plugin.json        # Decky 清单（name 为展示名，可与目录名不同）
 ├── main.py            # 后端入口（RPC 方法 / 兜底 / 日志）
 ├── netease.py         # 网易云客户端（AES + weapi/eapi + 各接口）
@@ -77,7 +77,7 @@ python -c "import asyncio,netease; print(asyncio.run(netease.NeteaseClient().sea
 把 `install-to-deck.ps1` / `一键安装到Deck.cmd` 与 `decky-netease-music/` 放一起，双击 **一键安装到Deck.cmd**，按提示输密码即可。
 
 **方式 B：Decky「从 ZIP 安装」**
-Decky 设置 → 开发者 → Install Plugin from ZIP File，选择 `decky-netease-music-decky.zip`（包内为 `decky-netease-music/plugin.json` 结构）。
+Decky 设置 → 开发者 → Install Plugin from ZIP File，选择从 **Releases** 页面下载的 `decky-netease-music-decky.zip`（包内为 `decky-netease-music/plugin.json` 结构）。
 
 **方式 C：手动复制**
 把 `decky-netease-music` 文件夹复制到 `~/homebrew/plugins/`，重启 Decky。
