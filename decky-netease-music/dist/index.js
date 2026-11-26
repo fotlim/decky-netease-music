@@ -270,6 +270,7 @@ const api = {
     songUrl: (id, level) => level ? call("song_url", id, level) : call("song_url", id),
     lyric: (id) => call("lyric", id),
     like: (id, like) => call("like", id, like),
+    likedIds: () => call("liked_ids"),
     play: (id) => call("play", id),
     // 设置 / 诊断
     getSettings: () => call("get_settings"),
@@ -702,6 +703,7 @@ function SmallAction({ onClick, children }) {
                 color: "#fff", fontSize: 12.5, fontWeight: 500, whiteSpace: "nowrap", lineHeight: 1.2,
             }, children: children }) }));
 }
+let LIKED_SET = null;
 /** 从封面提取近似主色（莫奈取色）；跨域受限时回退默认色 */
 function useMonetPalette(cover) {
     const [pal, setPal] = SP_REACT.useState(["#ec4141", "#2f6fb0", "#e0a84b"]);
@@ -779,14 +781,28 @@ function NowPlayingPage(props = {}) {
     const lineRefs = SP_REACT.useRef([]);
     const trackId = s.track?.id;
     SP_REACT.useEffect(() => {
-        setLiked(false);
         let alive = true;
         if (!trackId) {
+            setLiked(false);
             setLrc([]);
             setTr([]);
             setYrc([]);
             return;
         }
+        (async () => {
+            try {
+                if (!LIKED_SET) {
+                    const ids = await api.likedIds();
+                    LIKED_SET = new Set((ids || []).map((x) => Number(x)));
+                }
+                if (alive)
+                    setLiked(LIKED_SET.has(Number(trackId)));
+            }
+            catch {
+                if (alive)
+                    setLiked(false);
+            }
+        })();
         api.lyric(trackId)
             .then((r) => {
             if (!alive)
@@ -840,14 +856,27 @@ function NowPlayingPage(props = {}) {
     const toggleLike = async () => {
         if (!trackId)
             return;
+        const id = Number(trackId);
+        const next = !liked;
         try {
-            const r = await api.like(trackId, !liked);
+            const r = await api.like(id, next);
             if (r && (r.ok || r.code === 200)) {
-                setLiked(!liked);
-                toaster.toast({ title: !liked ? "已收藏" : "已取消收藏", body: s.track?.name || "" });
+                setLiked(next);
+                try {
+                    if (!LIKED_SET)
+                        LIKED_SET = new Set();
+                    next ? LIKED_SET.add(id) : LIKED_SET.delete(id);
+                }
+                catch { /* ignore */ }
+                toaster.toast({ title: next ? "已收藏" : "已取消收藏", body: s.track?.name || "" });
+            }
+            else {
+                toaster.toast({ title: "收藏失败", body: "返回码 " + String(r?.code ?? r) });
             }
         }
-        catch { /* ignore */ }
+        catch (e) {
+            toaster.toast({ title: "收藏失败", body: String(e?.message || e) });
+        }
     };
     const dur = s.duration > 0 ? s.duration : 1;
     const pos = Math.min(s.currentTime, dur);

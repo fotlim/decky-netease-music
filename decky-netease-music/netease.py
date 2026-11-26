@@ -734,4 +734,17 @@ class NeteaseClient:
             "alg": "itembased", "trackId": song_id,
             "like": "true" if like else "false", "time": int(time.time() * 1000),
         })
+        self._log("like id=%s like=%s code=%s" % (song_id, like, r.get("code")))
         return {"code": r.get("code", 0), "ok": r.get("code") == 200}
+
+    async def liked_ids(self):
+        """返回当前账号红心歌单全部歌曲 id（用于判断红心是否点亮）。"""
+        st = await self.status()
+        prof = st.get("profile") or {}
+        uid = prof.get("userId")
+        if not uid:
+            return []
+        r = await self.api("likelist", {"uid": uid}, method="GET")
+        ids = r.get("ids") or []
+        self._log("liked_ids uid=%s count=%d" % (uid, len(ids)))
+        return ids

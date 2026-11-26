@@ -212,6 +212,9 @@ class Plugin:
     async def like(self, song_id, like=True):
         return await self.client.like(song_id, like)
 
+    async def liked_ids(self):
+        return await self.client.liked_ids()
+
     # ------------------------------------------------------------------
     # 浏览 / 搜索
     # ------------------------------------------------------------------

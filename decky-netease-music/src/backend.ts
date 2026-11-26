@@ -52,7 +52,8 @@ export const api = {
   songUrl: (id: number, level?: string) =>
     level ? call<[number, string], any>("song_url", id, level) : call<[number], any>("song_url", id),
   lyric: (id: number) => call<[number], LyricResult>("lyric", id),
-  like: (id: number, like: boolean) => call<[number, boolean], { ok: boolean }>("like", id, like),
+  like: (id: number, like: boolean) => call<[number, boolean], { ok: boolean; code: number }>("like", id, like),
+  likedIds: () => call<[], number[]>("liked_ids"),
   play: (id: number) => call<[number], PlayResult>("play", id),
 
   // 设置 / 诊断

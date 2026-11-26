@@ -45,6 +45,8 @@ function SmallAction({ onClick, children }: { onClick: () => void; children: any
   );
 }
 
+let LIKED_SET: Set<number> | null = null;
+
 /** 从封面提取近似主色（莫奈取色）；跨域受限时回退默认色 */
 function useMonetPalette(cover: string): string[] {
   const [pal, setPal] = useState<string[]>(["#ec4141", "#2f6fb0", "#e0a84b"]);
@@ -104,9 +106,17 @@ export function NowPlayingPage(props: any = {}) {
 
   const trackId = s.track?.id;
   useEffect(() => {
-    setLiked(false);
     let alive = true;
-    if (!trackId) { setLrc([]); setTr([]); setYrc([]); return; }
+    if (!trackId) { setLiked(false); setLrc([]); setTr([]); setYrc([]); return; }
+    (async () => {
+      try {
+        if (!LIKED_SET) {
+          const ids = await api.likedIds();
+          LIKED_SET = new Set((ids || []).map((x: any) => Number(x)));
+        }
+        if (alive) setLiked(LIKED_SET.has(Number(trackId)));
+      } catch { if (alive) setLiked(false); }
+    })();
     api.lyric(trackId)
       .then((r) => {
         if (!alive) return;
@@ -146,13 +156,20 @@ export function NowPlayingPage(props: any = {}) {
 
   const toggleLike = async () => {
     if (!trackId) return;
+    const id = Number(trackId);
+    const next = !liked;
     try {
-      const r = await api.like(trackId, !liked);
+      const r = await api.like(id, next);
       if (r && (r.ok || (r as any).code === 200)) {
-        setLiked(!liked);
-        toaster.toast({ title: !liked ? "已收藏" : "已取消收藏", body: s.track?.name || "" });
+        setLiked(next);
+        try { if (!LIKED_SET) LIKED_SET = new Set(); next ? LIKED_SET.add(id) : LIKED_SET.delete(id); } catch { /* ignore */ }
+        toaster.toast({ title: next ? "已收藏" : "已取消收藏", body: s.track?.name || "" });
+      } else {
+        toaster.toast({ title: "收藏失败", body: "返回码 " + String((r as any)?.code ?? r) });
       }
-    } catch { /* ignore */ }
+    } catch (e: any) {
+      toaster.toast({ title: "收藏失败", body: String(e?.message || e) });
+    }
   };
 
   const dur = s.duration > 0 ? s.duration : 1;
