@@ -42,6 +42,45 @@ function SmallAction({ onClick, children }: { onClick: () => void; children: any
   );
 }
 
+/** 从封面提取近似主色（莫奈取色）；跨域受限时回退默认色 */
+function useMonetPalette(cover: string): string[] {
+  const [pal, setPal] = useState<string[]>(["#ec4141", "#2f6fb0", "#e0a84b"]);
+  useEffect(() => {
+    if (!cover) return;
+    let alive = true;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (!alive) return;
+      try {
+        const n = 24;
+        const cv = document.createElement("canvas");
+        cv.width = n; cv.height = n;
+        const ctx = cv.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, n, n);
+        const d = ctx.getImageData(0, 0, n, n).data;
+        const buckets = new Map<string, { r: number; g: number; b: number; c: number }>();
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3];
+          if (a < 128) continue;
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+          if (lum < 24 || lum > 236) continue;
+          const k = `${r >> 5},${g >> 5},${b >> 5}`;
+          const o = buckets.get(k) || { r: 0, g: 0, b: 0, c: 0 };
+          o.r += r; o.g += g; o.b += b; o.c++; buckets.set(k, o);
+        }
+        const arr = [...buckets.values()].sort((x, y) => y.c - x.c).slice(0, 3)
+          .map((o) => `rgb(${Math.round(o.r / o.c)},${Math.round(o.g / o.c)},${Math.round(o.b / o.c)})`);
+        if (alive && arr.length) { while (arr.length < 3) arr.push(arr[0]); setPal(arr); }
+      } catch { /* 画布被跨域污染时保留默认色 */ }
+    };
+    img.src = cover;
+    return () => { alive = false; };
+  }, [cover]);
+  return pal;
+}
+
 export function NowPlayingPage(props: any = {}) {
   const onClose: undefined | (() => void) = props.onClose;
   const onOpenAlbum: undefined | ((id: number) => void) = props.onOpenAlbum;
@@ -116,6 +155,7 @@ export function NowPlayingPage(props: any = {}) {
   const dur = s.duration > 0 ? s.duration : 1;
   const pos = Math.min(s.currentTime, dur);
   const cover = s.track?.cover || "";
+  const palette = useMonetPalette(cover);
 
   const onSeek = (v: number) => {
     setSeekPreview(v);
@@ -138,11 +178,31 @@ export function NowPlayingPage(props: any = {}) {
           0% { background-position: 0% 50%; }
           100% { background-position: 200% 50%; }
         }
+        @keyframes ncmFlowBg {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 200% 50%; }
+        }
+        @keyframes ncmBlob1 { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(18%,12%) scale(1.25); } 100% { transform: translate(0,0) scale(1); } }
+        @keyframes ncmBlob2 { 0% { transform: translate(0,0) scale(1.1); } 50% { transform: translate(-15%,18%) scale(0.9); } 100% { transform: translate(0,0) scale(1.1); } }
+        @keyframes ncmBlob3 { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(10%,-15%) scale(1.2); } 100% { transform: translate(0,0) scale(1); } }
+        .ncm-blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.6; mix-blend-mode: screen; will-change: transform; }
       `}</style>
       {cover && (
-        <img src={cover} style={{ position: "absolute", inset: -40, width: "calc(100% + 80px)", height: "calc(100% + 80px)", objectFit: "cover", filter: "blur(70px) saturate(1.25)", opacity: 0.55 }} />
+        <img src={cover} style={{ position: "absolute", inset: -60, width: "calc(100% + 120px)", height: "calc(100% + 120px)", objectFit: "cover", filter: "blur(80px) saturate(1.35)", opacity: 0.45 }} />
       )}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(10,14,20,0.85) 60%, rgba(8,11,16,0.96) 100%)" }} />
+      {/* 莫奈取色 · 动态流光光晕 */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        <div className="ncm-blob" style={{ left: "-12%", top: "-12%", width: "62%", height: "72%", background: `radial-gradient(circle, ${palette[0]}, transparent 68%)`, animation: "ncmBlob1 18s ease-in-out infinite" }} />
+        <div className="ncm-blob" style={{ right: "-16%", top: "4%", width: "66%", height: "76%", background: `radial-gradient(circle, ${palette[1]}, transparent 68%)`, animation: "ncmBlob2 22s ease-in-out infinite" }} />
+        <div className="ncm-blob" style={{ left: "14%", bottom: "-22%", width: "72%", height: "72%", background: `radial-gradient(circle, ${palette[2]}, transparent 70%)`, animation: "ncmBlob3 26s ease-in-out infinite" }} />
+      </div>
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(10,14,20,0.82) 60%, rgba(8,11,16,0.95) 100%)" }} />
+      {/* 扫过的流光 */}
+      <div style={{
+        position: "absolute", inset: 0, opacity: 0.16, mixBlendMode: "screen",
+        backgroundImage: `linear-gradient(120deg, ${palette[0]} 0%, transparent 30%, ${palette[1]} 55%, transparent 80%, ${palette[2]} 100%)`,
+        backgroundSize: "300% 300%", animation: "ncmFlowBg 16s linear infinite",
+      }} />
 
       <Focusable flow-children="column" style={{
         position: "relative", height: "100%", boxSizing: "border-box",
@@ -158,8 +218,8 @@ export function NowPlayingPage(props: any = {}) {
         </Focusable>
 
         <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 28, marginTop: 12 }}>
-          <Focusable flow-children="column" style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden" }}>
-            <AlbumArt src={cover} size={240} radius={14} />
+          <Focusable flow-children="column" style={{ width: 260, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden" }}>
+            <AlbumArt src={cover} size={200} radius={14} />
             <div style={{ marginTop: 12, marginBottom: 4, minWidth: 0, width: "100%" }}>
               <div style={{ width: "100%", fontSize: 22, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {s.track?.name || "未在播放"}
@@ -214,7 +274,7 @@ export function NowPlayingPage(props: any = {}) {
               ref={listRef}
               style={{
                 position: "absolute", inset: 0, overflowY: "auto", overflowX: "hidden", scrollBehavior: "smooth",
-                paddingTop: "38%", paddingBottom: "38%", paddingLeft: 18, paddingRight: 18, boxSizing: "border-box",
+                paddingTop: "38%", paddingBottom: "38%", paddingLeft: "11%", paddingRight: "11%", boxSizing: "border-box",
                 WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%)",
                 maskImage: "linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%)",
                 scrollbarWidth: "none",
