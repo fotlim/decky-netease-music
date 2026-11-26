@@ -6,6 +6,18 @@
 
 ---
 
+## 📷 截图
+
+| QAM 控制面板 | 全屏沉浸播放页 |
+| :---: | :---: |
+| ![QAM 控制面板](docs/screenshots/01-qam.jpg) | ![全屏播放页](docs/screenshots/02-nowplaying.jpg) |
+
+| 音乐库 · 发现 | 登录 · Cookie 导入 |
+| :---: | :---: |
+| ![发现](docs/screenshots/03-library.jpg) | ![登录](docs/screenshots/04-login.jpg) |
+
+---
+
 ## ✨ 功能
 
 - **QAM 控制面板**：封面、歌名/歌手、滚动歌词、进度、播放/上一首/下一首、音量、播放模式（列表循环/顺序/单曲/随机）。
