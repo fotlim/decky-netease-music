@@ -72,7 +72,7 @@ decky-netease-music/
 │   ├── backend.ts       # RPC 封装
 │   ├── player.ts        # 音频单例/状态
 │   └── views/           # QAM 面板 / 全屏页面
-└── dist/index.js        # 构建产物（提交进仓库，安装即可用）
+└── dist/index.js        # 构建产物（本地/安装包需要；不要提交进 Git 仓库，商店构建时生成）
 ```
 
 ### 3.1 `plugin.json`（清单）
@@ -119,15 +119,21 @@ decky-netease-music/
   },
   "dependencies": {
     "@decky/api": "^1.1.3",
-    "@decky/ui": "^4.12.0"
+    "@decky/ui": "^5.0.2"
   },
   "devDependencies": {
     "@decky/rollup": "^1.0.2",
-    "rollup": "^4.62.4",
-    "typescript": "^5.6.3"
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "rollup": "^4.68.8",
+    "typescript": "^5.9.3"
   }
 }
 ```
+
+> 商店审核 2026 起要求：`@decky/api`、`@decky/ui` 用**最新版**，**React 相关依赖固定 19.1.1**（`react`/`react-dom` 19.1.1，`@types/react(-dom)` 19）。
 
 > 商店发布时维护者会看 `version`，**每次更新都要 bump 版本号**。
 
@@ -468,9 +474,75 @@ gh pr create --repo SteamDeckHomebrew/decky-plugin-database \
 - [ ] QAM 根容器加 **safe-area** 上下 padding，别被 Steam 栏遮。
 - [ ] 音频/网络用**单例 + 状态订阅**，组件卸载不中断。
 - [ ] 大列表用虚拟滚动/分页（offset+limit），别一次拉几千条。
+- [ ] **TLS 必须校验证书**：`aiohttp.TCPConnector(ssl=False)` 会被商店审核打回；用 `certifi` 的默认校验上下文。
+- [ ] **别把 `dist/` 提交进 Git**（`.gitignore` 忽略；商店构建时生成），安装 zip 里才需要带上 dist。
+- [ ] **后端不要读任意文件当凭据**：限制目录/大小并校验内容（如必须含 `MUSIC_U`）。
+- [ ] 轮询别太密（扫码 check ≥ 3–5s），降低服务端压力。
 - [ ] 设置写 `DECKY_PLUGIN_RUNTIME_DIR`，日志写 `DECKY_PLUGIN_LOG_DIR`。
 - [ ] `plugin.json` 的 `publish.image/description/tags` 填好（商店需要）。
 - [ ] 每次发布 bump `package.json` 版本。
+- [ ] **多语言默认英文、跟随系统**（`navigator.language` 以 zh 开头才用中文）。
+
+---
+
+## 12. 商店审核高频要求（2026-11 实战经验）
+
+以本项目 PR 被要求的修改为例，提审前先自查：
+
+1. **TLS 校验证书**：不要 `aiohttp.TCPConnector(ssl=False)`。用 `certifi` 的默认校验上下文：
+   ```python
+   import ssl
+   try:
+       import certifi
+   except Exception:
+       certifi = None
+   def ssl_ctx():
+       return ssl.create_default_context(cafile=certifi.where()) if certifi else ssl.create_default_context()
+   # aiohttp.TCPConnector(ssl=ssl_ctx(), family=socket.AF_INET)
+   ```
+2. **长列表虚拟化**：只渲染可视窗口 + 缓冲（本项目 `SongList` 的做法）。
+3. **轮询间隔**：扫码 check 用 3–5s，不要 1–2s。
+4. **依赖最新**：`@decky/api` / `@decky/ui` 升到最新；**React 相关固定 19.1.1**。
+5. **仓库不要有 `dist/`**：`.gitignore` 忽略，商店/构建时生成；安装 zip 里再带 dist。
+6. **Cookie 文件读取安全**：后端不能「读任意路径就当凭据」。做法：只允许读插件运行时目录/用户主目录、限制大小（≤64KB）、内容必须含 `MUSIC_U`。
+7. **多语言默认英文、跟随系统**：`navigator.language` 以 `zh` 开头才用中文，其余英文；可加手动切换并记忆。
+
+> PR 模板（`plugin_addition.md`）里 **必须保留一行 Testing 勾选**：Python 后端用 `Tested by a third party on SteamOS Stable or Beta update channel.`（删掉 Preview 行）；第三方测试那栏由测试者勾，作者不要自勾。
+
+---
+
+## 13. 游戏模式剪贴板不可用？用「本地网页 + 浏览器」方案
+
+**问题**：Game Mode 下插件 QAM 的 CEF 面板会屏蔽 `navigator.clipboard`，`readText()` 抛错；Steam 虚拟键盘跨设备粘贴也很差。
+
+**方案（参考 [Friendeck](https://github.com/panyiwei-home/Friendeck)）**：后端起一个**本地 aiohttp 网页服务**，插件用**浏览器**打开它；浏览器上下文里剪贴板正常可用，粘贴后 POST 回后端写文件。
+
+后端（`main.py`）最小示例：
+
+```python
+from aiohttp import web
+
+async def _start_paste_server(self):
+    app = web.Application()
+    app.router.add_get("/", self._paste_index)       # 返回一个带 textarea 的 HTML
+    app.router.add_post("/cookie", self._paste_cookie)  # 接收 {cookie} 并写 cookies.txt
+    runner = web.AppRunner(app); await runner.setup()
+    await web.TCPSite(runner, "127.0.0.1", 39101).start()  # 只绑回环，避免暴露局域网
+    self.paste_runner = runner; self.paste_port = 39101
+
+# RPC: 前端拿到 url
+async def paste_server_url(self):
+    return {"url": f"http://127.0.0.1:{self.paste_port}/" if self.paste_port else ""}
+```
+
+前端（`Navigation.NavigateToExternalWeb` 打开）：
+
+```tsx
+const r = await api.pasteServerUrl();
+if (r.url) Navigation.NavigateToExternalWeb(r.url); // 用 Steam 浏览器打开粘贴页
+```
+
+网页里放 `<textarea>` + `navigator.clipboard.readText()` 粘贴按钮 + `fetch('/cookie',{method:'POST',...})` 提交；提交成功后回插件点「刷新登录状态」。
 
 ---
 
