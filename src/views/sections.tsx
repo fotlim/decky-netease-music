@@ -600,7 +600,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 640 }}>
             <div style={{ fontSize: 13, color: COLORS.sub, lineHeight: 1.9 }}>
               扫码被风控(8821)时用此法最稳，免打字，任选其一：
-              <br />① 电脑运行 <b>生成Cookie文件</b> 脚本，得到 <b>cookie.txt</b>；
+              <br />① 电脑运行 <b>生成Cookie文件</b> 脚本（自动打开浏览器登录并生成 <b>cookie.txt</b>）；
               <br />② 把 <b>cookie.txt</b> 传到 Deck，点 <b>选择文件导入</b>；
               <br />③ 或手动粘贴 <b>MUSIC_U</b>（浏览器 F12 → Application → Cookies）。
             </div>

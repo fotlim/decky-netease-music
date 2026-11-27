@@ -1,5 +1,9 @@
 # 更新日志 / Changelog
 
+## v1.5.22
+- Cookie 登录说明补充「生成Cookie文件脚本会自动打开浏览器登录并生成 cookie.txt」。
+- （配套脚本 `生成Cookie文件.cmd` 升级：自动唤起 Edge/Chrome 打开网易云登录页，登录后经 CDP 自动读取 `MUSIC_U` 并生成 `cookie.txt`。）
+
 ## v1.5.21
 - 更新 Cookie 登录页说明：改为「电脑运行 **生成Cookie文件** 脚本得到 cookie.txt → 传到 Deck → 选择文件导入 / 手动粘贴 MUSIC_U」，不再提已移除的「导入Cookie到Deck」推送脚本。
 

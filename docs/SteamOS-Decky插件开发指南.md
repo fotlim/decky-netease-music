@@ -519,7 +519,7 @@ gh pr create --repo SteamDeckHomebrew/decky-plugin-database \
 
 **推荐（简单可靠）**：在电脑上生成 `cookie.txt`，**手动传到 Deck**，插件用「选择文件导入」或放到固定路径后「刷新登录状态」。
 
-- 本项目附带 `生成Cookie文件.cmd`：输入 `MUSIC_U`（可选 `__csrf`）→ 生成 `cookie.txt`，内容形如：
+- 本项目附带 `生成Cookie文件.cmd`：**自动打开浏览器到网易云登录页，登录后自动读取 `MUSIC_U` 并生成 `cookie.txt`**（读不到时回退手动输入 `MUSIC_U`）。内容形如：
   ```
   MUSIC_U=xxxxx; __csrf=yyyyy
   ```
