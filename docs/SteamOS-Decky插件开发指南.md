@@ -511,38 +511,22 @@ gh pr create --repo SteamDeckHomebrew/decky-plugin-database \
 
 ---
 
-## 13. 游戏模式剪贴板不可用？用「本地网页 + 浏览器」方案
+## 13. 剪贴板/文件导入：用「生成 cookie 文件」脚本 + 手动传输
 
-**问题**：Game Mode 下插件 QAM 的 CEF 面板会屏蔽 `navigator.clipboard`，`readText()` 抛错；Steam 虚拟键盘跨设备粘贴也很差。
+**问题**：Game Mode 下插件 QAM 的 CEF 面板屏蔽 `navigator.clipboard`；Steam 虚拟键盘跨设备粘贴也差。
 
-**方案（参考 [Friendeck](https://github.com/panyiwei-home/Friendeck)）**：后端起一个**本地 aiohttp 网页服务**，插件用**浏览器**打开它；浏览器上下文里剪贴板正常可用，粘贴后 POST 回后端写文件。
+**踩坑**：我们尝试过「后端起本地 aiohttp 网页 + 用 Steam 内置浏览器打开」来管理 Cookie，但在 Steam 内置浏览器里常**报 502 / 打不开**（CEF/端口/内嵌浏览器限制），不够稳，**最终放弃**。
 
-后端（`main.py`）最小示例：
+**推荐（简单可靠）**：在电脑上生成 `cookie.txt`，**手动传到 Deck**，插件用「选择文件导入」或放到固定路径后「刷新登录状态」。
 
-```python
-from aiohttp import web
+- 本项目附带 `生成Cookie文件.cmd`：输入 `MUSIC_U`（可选 `__csrf`）→ 生成 `cookie.txt`，内容形如：
+  ```
+  MUSIC_U=xxxxx; __csrf=yyyyy
+  ```
+- 传到 Deck（U 盘 / 文件管理器 / 局域网共享均可）→ 插件「我的 → 登录 → Cookie 登录 → 选择文件导入」；
+- 或直接放到 `~/homebrew/data/decky-netease-music/cookies.txt`，再点「刷新登录状态」。
 
-async def _start_paste_server(self):
-    app = web.Application()
-    app.router.add_get("/", self._paste_index)       # 返回一个带 textarea 的 HTML
-    app.router.add_post("/cookie", self._paste_cookie)  # 接收 {cookie} 并写 cookies.txt
-    runner = web.AppRunner(app); await runner.setup()
-    await web.TCPSite(runner, "127.0.0.1", 39101).start()  # 只绑回环，避免暴露局域网
-    self.paste_runner = runner; self.paste_port = 39101
-
-# RPC: 前端拿到 url
-async def paste_server_url(self):
-    return {"url": f"http://127.0.0.1:{self.paste_port}/" if self.paste_port else ""}
-```
-
-前端（`Navigation.NavigateToExternalWeb` 打开）：
-
-```tsx
-const r = await api.pasteServerUrl();
-if (r.url) Navigation.NavigateToExternalWeb(r.url); // 用 Steam 浏览器打开粘贴页
-```
-
-网页里放 `<textarea>` + `navigator.clipboard.readText()` 粘贴按钮 + `fetch('/cookie',{method:'POST',...})` 提交；提交成功后回插件点「刷新登录状态」。
+> 经验：不要为了剪贴板去硬起本地 HTTP 页面，Steam 内置浏览器限制多；「生成文件 + 手动导入」最省事可靠。
 
 ---
 

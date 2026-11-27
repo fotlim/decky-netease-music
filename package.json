@@ -1,6 +1,6 @@
 {
   "name": "decky-netease-music",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "网易云音乐 Decky Loader 插件 - 简洁、高效、低占用",
   "type": "module",
   "scripts": {
