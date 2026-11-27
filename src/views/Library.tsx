@@ -26,7 +26,7 @@ const TABS = [
 export function Library() {
   const tt = useT();
   const lang = useLang();
-  const tabLabel = (k: string) => (k === "home" ? tt("发现", "Discover") : k === "search" ? tt("搜索", "Search") : tt("我的", "Mine"));
+  const tabLabel = (k: string) => (k === "home" ? tt("Discover") : k === "search" ? tt("Search") : tt("Mine"));
   const [stack, setStack] = useState<View[]>([{ name: "home" }]);
   const [showNow, setShowNow] = useState(false);
   const view = stack[stack.length - 1];
@@ -71,7 +71,7 @@ export function Library() {
         >
           <FaChevronLeft size={16} />
         </Focusable>
-        <div style={{ fontSize: 20, fontWeight: 700 }}>{tt("网易云音乐", "NetEase Music")}</div>
+        <div style={{ fontSize: 20, fontWeight: 700 }}>{tt("NetEase Music")}</div>
         <div style={{ flex: 1 }} />
         <Focusable
           onClick={() => setLang(lang === "zh" ? "en" : "zh")}

@@ -12,7 +12,7 @@ import { COLORS, fmtCount } from "../utils";
 import {
   AlbumArt, CardRow, ErrorText, Loading, MediaCard, PlayAllButton, SectionTitle, SongList,
 } from "../components";
-import { useT } from "../i18n";
+import { t as tr, useT } from "../i18n";
 
 export interface NavFns {
   toPlaylist: (id: number) => void;
@@ -34,7 +34,7 @@ function useAsync<T>(fn: () => Promise<T>, deps: any[]) {
     setError(null);
     fn()
       .then((d) => { if (alive) { setData(d); setLoading(false); } })
-      .catch((e) => { if (alive) { setError(String(e?.message || e || "加载失败")); setLoading(false); } });
+      .catch((e) => { if (alive) { setError(String(e?.message || e || tr("Load failed"))); setLoading(false); } });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, nonce]);
@@ -84,16 +84,16 @@ export function HomeSection({ nav }: { nav: NavFns }) {
 
   return (
     <div>
-      <SectionTitle>{tt("推荐歌单", "Recommended playlists")}</SectionTitle>
+      <SectionTitle>{tt("Recommended playlists")}</SectionTitle>
       {pz.loading ? <Loading /> : pz.error ? <ErrorText text={pz.error} /> : (
         <CardRow>
           {(pz.data || []).map((p) => (
-            <MediaCard key={p.id} title={p.name} subtitle={`${fmtCount(p.playCount)} ${tt("次播放", "plays")}`} cover={p.cover} onClick={() => nav.toPlaylist(p.id)} />
+            <MediaCard key={p.id} title={p.name} subtitle={`${fmtCount(p.playCount)} ${tt("plays")}`} cover={p.cover} onClick={() => nav.toPlaylist(p.id)} />
           ))}
         </CardRow>
       )}
 
-      <SectionTitle>{tt("排行榜", "Charts")}</SectionTitle>
+      <SectionTitle>{tt("Charts")}</SectionTitle>
       {tl.loading ? <Loading /> : tl.error ? <ErrorText text={tl.error} /> : (
         <CardRow>
           {(tl.data || []).map((t) => (
@@ -102,7 +102,7 @@ export function HomeSection({ nav }: { nav: NavFns }) {
         </CardRow>
       )}
 
-      <SectionTitle>{tt("新歌推荐", "New songs")}</SectionTitle>
+      <SectionTitle>{tt("New songs")}</SectionTitle>
       {rec.loading ? <Loading /> : rec.error ? <ErrorText text={rec.error} /> : (
         <SongList tracks={rec.data || []} showCover onPlay={(t) => playFrom(rec.data || [], t)} />
       )}
@@ -114,13 +114,14 @@ export function HomeSection({ nav }: { nav: NavFns }) {
 // 搜索
 // ---------------------------------------------------------------------------
 const SEARCH_TYPES = [
-  { t: 1, l: "单曲" },
-  { t: 1000, l: "歌单" },
-  { t: 10, l: "专辑" },
-  { t: 100, l: "歌手" },
+  { t: 1, l: "Songs" },
+  { t: 1000, l: "Playlists" },
+  { t: 10, l: "Albums" },
+  { t: 100, l: "Artists" },
 ];
 
 export function SearchSection({ nav }: { nav: NavFns }) {
+  const tt = useT();
   const [type, setType] = useState(1);
   const [res, setRes] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -168,7 +169,7 @@ export function SearchSection({ nav }: { nav: NavFns }) {
       const r = await api.search(k, t, 50, 0);
       setRes(r);
     } catch (e: any) {
-      setErr(String(e?.message || e || "搜索失败"));
+      setErr(String(e?.message || e || tr("Search failed")));
     } finally {
       setLoading(false);
     }
@@ -190,10 +191,10 @@ export function SearchSection({ nav }: { nav: NavFns }) {
             defaultValue=""
             onChange={(e) => onInput(e.target.value)}
             onKeyDown={(e: any) => { if (e.key === "Enter") doSearch(); }}
-            placeholder="搜索歌曲/歌手/歌单，或用拼音如 zhoujielun"
+            placeholder={tt("Search songs/artists/playlists, or pinyin like zhoujielun")}
           />
         </div>
-        <PrimaryButton onClick={() => doSearch()}><FaSearch size={13} /> 搜索</PrimaryButton>
+        <PrimaryButton onClick={() => doSearch()}><FaSearch size={13} /> {tt("Search")}</PrimaryButton>
       </div>
 
       {sugg.length > 0 && (
@@ -205,7 +206,7 @@ export function SearchSection({ nav }: { nav: NavFns }) {
               onClick={() => { setSugg([]); runSearch(sg.text); }}
               style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 8px", borderRadius: 6, cursor: "pointer" }}
             >
-              <span style={{ fontSize: 11, color: "#fff", background: COLORS.accent, borderRadius: 4, padding: "1px 6px" }}>{sg.type === "song" ? "单曲" : sg.type === "artist" ? "歌手" : "专辑"}</span>
+              <span style={{ fontSize: 11, color: "#fff", background: COLORS.accent, borderRadius: 4, padding: "1px 6px" }}>{sg.type === "song" ? tt("Songs") : sg.type === "artist" ? tt("Artists") : tt("Albums")}</span>
               <span style={{ fontSize: 14, color: COLORS.text }}>{sg.text}</span>
               {sg.sub && <span style={{ fontSize: 12, color: COLORS.sub }}>{sg.sub}</span>}
             </Focusable>
@@ -214,12 +215,12 @@ export function SearchSection({ nav }: { nav: NavFns }) {
       )}
 
       <div style={{ fontSize: 11.5, color: COLORS.dim, marginBottom: 8 }}>
-        💡 支持拼音搜索：如 <b>zhoujielun</b>、<b>qingtian</b>（英文键盘直接打，无需中文输入法）
+        {tt("💡 Pinyin search: e.g. zhoujielun, qingtian (type on an English keyboard, no IME needed)")}
       </div>
 
       <Focusable flow-children="row" style={{ display: "flex", gap: 8, marginBottom: 10 }}>
         {SEARCH_TYPES.map((x) => (
-          <Chip key={x.t} active={type === x.t} onClick={() => onType(x.t)}>{x.l}</Chip>
+          <Chip key={x.t} active={type === x.t} onClick={() => onType(x.t)}>{tt(x.l)}</Chip>
         ))}
       </Focusable>
 
@@ -228,22 +229,22 @@ export function SearchSection({ nav }: { nav: NavFns }) {
         <Focusable flow-children="column" style={{ marginBottom: 12, display: "flex", flexDirection: "column", gap: 8 }}>
           {history.length > 0 && (
             <Focusable flow-children="row" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: COLORS.dim, marginRight: 2 }}>历史</span>
+              <span style={{ fontSize: 12, color: COLORS.dim, marginRight: 2 }}>{tt("History")}</span>
               {history.map((h) => <Chip key={"h" + h} onClick={() => runSearch(h)}>{h}</Chip>)}
-              <Chip onClick={clearHistory}>清空</Chip>
+              <Chip onClick={clearHistory}>{tt("Clear")}</Chip>
             </Focusable>
           )}
           {hots.length > 0 && (
             <Focusable flow-children="row" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: COLORS.dim, marginRight: 2 }}>热门</span>
+              <span style={{ fontSize: 12, color: COLORS.dim, marginRight: 2 }}>{tt("Hot")}</span>
               {hots.slice(0, 12).map((h) => <Chip key={"t" + h} onClick={() => runSearch(h)}>{h}</Chip>)}
             </Focusable>
           )}
         </Focusable>
       )}
 
-      {loading ? <Loading text="搜索中…" /> : err ? <ErrorText text={err} /> : !res ? (
-        <Loading text="输入关键词，或点上方「热门/历史」直接搜索 🔍" />
+      {loading ? <Loading text={tt("Searching…")} /> : err ? <ErrorText text={err} /> : !res ? (
+        <Loading text={tt("Type a keyword, or tap Hot/History above to search 🔍")} />
       ) : (
         <SearchResults res={res} nav={nav} />
       )}
@@ -252,28 +253,29 @@ export function SearchSection({ nav }: { nav: NavFns }) {
 }
 
 function SearchResults({ res, nav }: { res: SearchResult; nav: NavFns }) {
+  const tt = useT();
   if (res.type === 1) {
     const songs = res.songs || [];
     return songs.length ? (
       <SongList tracks={songs} onPlay={(t) => playFrom(songs, t)} />
-    ) : <Loading text="没有找到相关歌曲" />;
+    ) : <Loading text={tt("No matching songs")} />;
   }
   if (res.type === 1000) {
     const list = res.playlists || [];
     return list.length ? (
-      <CardRow>{list.map((p) => <MediaCard key={p.id} title={p.name} subtitle={`${fmtCount(p.playCount)} 次播放`} cover={p.cover} onClick={() => nav.toPlaylist(p.id)} />)}</CardRow>
-    ) : <Loading text="没有找到相关歌单" />;
+      <CardRow>{list.map((p) => <MediaCard key={p.id} title={p.name} subtitle={`${fmtCount(p.playCount)} ${tt("plays")}`} cover={p.cover} onClick={() => nav.toPlaylist(p.id)} />)}</CardRow>
+    ) : <Loading text={tt("No matching playlists")} />;
   }
   if (res.type === 10) {
     const list = res.albums || [];
     return list.length ? (
       <CardRow>{list.map((a) => <MediaCard key={a.id} title={a.name} subtitle={a.artist} cover={a.cover} onClick={() => nav.toAlbum(a.id)} />)}</CardRow>
-    ) : <Loading text="没有找到相关专辑" />;
+    ) : <Loading text={tt("No matching albums")} />;
   }
   const list = res.artists || [];
   return list.length ? (
     <CardRow>{list.map((a) => <MediaCard key={a.id} title={a.name} subtitle={(a.alias || []).join(" / ")} cover={a.cover} onClick={() => nav.toArtist(a.id)} />)}</CardRow>
-  ) : <Loading text="没有找到相关歌手" />;
+  ) : <Loading text={tt("No matching artists")} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -297,10 +299,10 @@ export function MineSection({ nav }: { nav: NavFns }) {
 
   const profile = st.data.profile!;
   const QUALITIES = [
-    { k: "standard", l: "标准" },
-    { k: "higher", l: "较高" },
-    { k: "exhigh", l: "极高" },
-    { k: "lossless", l: "无损" },
+    { k: "standard", l: "Standard" },
+    { k: "higher", l: "Higher" },
+    { k: "exhigh", l: "High" },
+    { k: "lossless", l: "Lossless" },
   ];
   return (
     <div>
@@ -309,21 +311,21 @@ export function MineSection({ nav }: { nav: NavFns }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 18, fontWeight: 600, color: COLORS.text }}>{profile.nickname}</div>
           <div style={{ fontSize: 12, color: COLORS.sub, marginTop: 3 }}>
-            {profile.vipType ? "VIP 会员" : "普通用户"} · UID {profile.userId}
+            {profile.vipType ? tt("VIP member") : tt("Regular user")} · UID {profile.userId}
           </div>
         </div>
         <PrimaryButton onClick={async () => { await api.logout(); st.reload(); }}>
-          <FaSignOutAlt size={13} /> 退出
+          <FaSignOutAlt size={13} /> {tt("Log out")}
         </PrimaryButton>
       </div>
 
       <Focusable flow-children="row" style={{ display: "flex", gap: 8, alignItems: "center", margin: "0 4px 16px" }}>
-        <span style={{ fontSize: 12, color: COLORS.sub, marginRight: 2 }}>音质</span>
+        <span style={{ fontSize: 12, color: COLORS.sub, marginRight: 2 }}>{tt("Audio quality")}</span>
         {QUALITIES.map((q) => (
           <Chip key={q.k} active={quality === q.k} onClick={async () => {
             const r = await api.setQuality(q.k);
             setQuality(r.quality || q.k);
-          }}>{q.l}</Chip>
+          }}>{tt(q.l)}</Chip>
         ))}
       </Focusable>
 
@@ -333,19 +335,19 @@ export function MineSection({ nav }: { nav: NavFns }) {
         if (!likedPl) return null;
         return (
           <>
-            <SectionTitle>{tt("我的收藏", "My favorites")}</SectionTitle>
+            <SectionTitle>{tt("My favorites")}</SectionTitle>
             <CardRow>
-              <MediaCard title={likedPl.name || "我喜欢的音乐"} subtitle={`${likedPl.trackCount} 首`} cover={likedPl.cover} onClick={() => nav.toPlaylist(likedPl.id)} />
+              <MediaCard title={likedPl.name || tt("My favorite music")} subtitle={`${likedPl.trackCount} ${tt("tracks")}`} cover={likedPl.cover} onClick={() => nav.toPlaylist(likedPl.id)} />
             </CardRow>
           </>
         );
       })()}
 
-      <SectionTitle>{tt("我的歌单", "My playlists")}</SectionTitle>
+      <SectionTitle>{tt("My playlists")}</SectionTitle>
       {pls.loading ? <Loading /> : pls.error ? <ErrorText text={pls.error} /> : (
         <CardRow>
           {(pls.data || []).filter((p) => !p.name.includes("喜欢")).map((p) => (
-            <MediaCard key={p.id} title={p.name} subtitle={`${p.trackCount} 首`} cover={p.cover} onClick={() => nav.toPlaylist(p.id)} />
+            <MediaCard key={p.id} title={p.name} subtitle={`${p.trackCount} ${tt("tracks")}`} cover={p.cover} onClick={() => nav.toPlaylist(p.id)} />
           ))}
         </CardRow>
       )}
@@ -361,7 +363,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [method, setMethod] = useState<"qr" | "pass" | "cookie">("qr");
   const [qrUrl, setQrUrl] = useState("");
   const [qrKey, setQrKey] = useState("");
-  const [qrMsg, setQrMsg] = useState("正在获取二维码…");
+  const [qrMsg, setQrMsg] = useState(tt("Loading QR…"));
   const [account, setAccount] = useState("");
   const [pwd, setPwd] = useState("");
   const [cookieStr, setCookieStr] = useState("");
@@ -372,15 +374,15 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
 
   const applyCheck = (code: number, message?: string): boolean => {
     if (code === 803) {
-      setQrMsg("登录成功！正在进入…");
+      setQrMsg(tt("Signed in! Entering…"));
       setTimeout(() => onLoggedIn(), 250);
       return true;
     }
-    if (code === 802) setQrMsg("已扫码，请在手机上点击确认");
-    else if (code === 801) setQrMsg("等待扫码…");
-    else if (code === 800) setQrMsg("二维码已过期，请点「刷新二维码」");
-    else if (code === 8821) setQrMsg("扫码被网易云风控(8821)，请改用下方「Cookie 登录」");
-    else setQrMsg(message || ("状态码：" + code));
+    if (code === 802) setQrMsg(tt("Scanned, please confirm on your phone"));
+    else if (code === 801) setQrMsg(tt("Waiting for scan…"));
+    else if (code === 800) setQrMsg(tt("QR expired, tap Refresh QR"));
+    else if (code === 8821) setQrMsg(tt("Scan blocked by NetEase risk control (8821), use Cookie login below"));
+    else setQrMsg(message || (tt("Status code: ") + code));
     return false;
   };
 
@@ -397,9 +399,9 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
         key = r.key;
         setQrKey(r.key);
         setQrUrl(r.url);
-        setQrMsg("请用网易云音乐 App 扫描二维码");
+        setQrMsg(tt("Please scan with the NetEase app"));
       } catch (e: any) {
-        if (alive) setQrMsg("获取二维码失败：" + String(e?.message || e));
+        if (alive) setQrMsg(tt("Failed to get QR: ") + String(e?.message || e));
       }
     };
     const poll = async () => {
@@ -422,7 +424,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
       const r = await api.qrCheck(qrKey);
       applyCheck(r.code, r.message);
     } catch (e: any) {
-      setQrMsg("检测失败：" + String(e?.message || e));
+      setQrMsg(tt("Check failed: ") + String(e?.message || e));
     } finally {
       setChecking(false);
     }
@@ -434,13 +436,13 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
   const loadLog = async () => {
     if (showLog) { setShowLog(false); return; }
     setShowLog(true);
-    setLogText("读取中…");
+    setLogText(tt("Reading…"));
     try {
       const r = await api.getLog(400);
-      setLogText(r.text || "（暂无日志）");
+      setLogText(r.text || tt("No logs"));
       setLogPath(r.path || "");
     } catch (e: any) {
-      setLogText("读取日志失败：" + String(e?.message || e));
+      setLogText(tt("Failed to read logs: ") + String(e?.message || e));
     }
   };
 
@@ -464,10 +466,10 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
       const r = account.includes("@")
         ? await api.loginEmail(account.trim(), pwd)
         : await api.loginCellphone(account.trim(), pwd, "86");
-      if (r.code === 200) { setMsg("登录成功"); onLoggedIn(); }
-      else setMsg(r.message || `登录失败 (${r.code})`);
+      if (r.code === 200) { setMsg(tt("Signed in")); onLoggedIn(); }
+      else setMsg(r.message || (tt("Login failed") + ` (${r.code})`));
     } catch (e: any) {
-      setMsg(String(e?.message || e || "登录失败"));
+      setMsg(String(e?.message || e || tt("Login failed")));
     } finally {
       setBusy(false);
     }
@@ -479,10 +481,10 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
     setMsg("");
     try {
       const st = await api.loginCookie(cookieStr.trim());
-      if (st.loggedIn) { setMsg("登录成功"); onLoggedIn(); }
-      else setMsg("Cookie 无效或已过期，请重新复制（重点要包含 MUSIC_U）");
+      if (st.loggedIn) { setMsg(tt("Signed in")); onLoggedIn(); }
+      else setMsg(tt("Cookie invalid or expired; please copy again (must include MUSIC_U)"));
     } catch (e: any) {
-      setMsg("登录失败：" + String(e?.message || e));
+      setMsg(tt("Login failed: ") + String(e?.message || e));
     } finally {
       setBusy(false);
     }
@@ -493,11 +495,11 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
       const res: any = await openFilePicker(0 as any, "/home/deck", true, false, undefined, ["txt"], false, false);
       if (res && res.path) {
         const st = await api.importCookieFile(res.path);
-        if (st.loggedIn) { setMsg("登录成功"); onLoggedIn(); }
-        else setMsg("该文件未包含有效 Cookie");
+        if (st.loggedIn) { setMsg(tt("Signed in")); onLoggedIn(); }
+        else setMsg(tt("This file has no valid cookie"));
       }
     } catch (e: any) {
-      setMsg("选择文件失败：" + String(e?.message || e));
+      setMsg(tt("File selection failed: ") + String(e?.message || e));
     }
   };
 
@@ -505,20 +507,20 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
     setBusy(true);
     try {
       const st = await api.reloadCookies();
-      if (st.loggedIn) { setMsg("登录成功"); onLoggedIn(); }
-      else setMsg("还没检测到有效登录，请先导入 Cookie（或重启 Decky 后再试）");
+      if (st.loggedIn) { setMsg(tt("Signed in")); onLoggedIn(); }
+      else setMsg(tt("Not logged in yet; import a Cookie first (or restart Decky and retry)"));
     } catch (e: any) {
-      setMsg("刷新失败：" + String(e?.message || e));
+      setMsg(tt("Refresh failed: ") + String(e?.message || e));
     } finally {
       setBusy(false);
     }
   };
 
-  const statusColor = qrMsg.includes("成功")
+  const statusColor = qrMsg.includes("Signed")
     ? "#3ddc84"
-    : qrMsg.includes("已扫码")
+    : qrMsg.includes("Scanned")
       ? "#ffc83d"
-      : qrMsg.includes("过期")
+      : qrMsg.includes("expired")
         ? "#ff7a45"
         : COLORS.sub;
 
@@ -543,18 +545,18 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
             color: "#fff", fontSize: 22, boxShadow: "0 6px 18px rgba(236,65,65,0.45)",
           }}>♪</div>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.text }}>{tt("登录网易云音乐", "Sign in to NetEase Music")}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.text }}>{tt("Sign in to NetEase Music")}</div>
             <div style={{ fontSize: 12.5, color: COLORS.sub, marginTop: 2 }}>
-              {tt("登录后可解锁 VIP 曲目、查看「我的歌单」与更高音质", "Sign in to unlock VIP tracks, your playlists and higher audio quality")}
+              {tt("Sign in to unlock VIP tracks, your playlists and higher audio quality")}
             </div>
           </div>
         </div>
 
         {/* 方式切换 */}
         <Focusable flow-children="row" style={{ display: "flex", gap: 10, marginBottom: 22 }}>
-          <Chip active={method === "qr"} onClick={() => setMethod("qr")}><FaQrcode size={12} /> {tt("扫码登录", "QR code")}</Chip>
-          <Chip active={method === "pass"} onClick={() => setMethod("pass")}><FaKey size={12} /> {tt("账号密码", "Password")}</Chip>
-          <Chip active={method === "cookie"} onClick={() => setMethod("cookie")}><FaKey size={12} /> {tt("Cookie 登录", "Cookie")}</Chip>
+          <Chip active={method === "qr"} onClick={() => setMethod("qr")}><FaQrcode size={12} /> {tt("QR code")}</Chip>
+          <Chip active={method === "pass"} onClick={() => setMethod("pass")}><FaKey size={12} /> {tt("Password")}</Chip>
+          <Chip active={method === "cookie"} onClick={() => setMethod("cookie")}><FaKey size={12} /> {tt("Cookie")}</Chip>
         </Focusable>
 
         {method === "qr" ? (
@@ -567,7 +569,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
             }}>
               {svg
                 ? <div style={{ width: "100%", height: "100%" }} dangerouslySetInnerHTML={{ __html: svg }} />
-                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#8a8a8a", fontSize: 13 }}>{tt("二维码加载中…", "Loading QR…")}</div>}
+                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#8a8a8a", fontSize: 13 }}>{tt("Loading QR…")}</div>}
             </div>
 
             {/* 状态 + 引导 */}
@@ -577,22 +579,22 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
                 <span style={{ fontSize: 15.5, color: "#fff", fontWeight: 600 }}>{qrMsg}</span>
               </div>
               <div style={{ fontSize: 13, color: COLORS.sub, lineHeight: 2 }}>
-                <div>{tt("① 打开手机「网易云音乐」", "① Open NetEase Cloud Music on your phone")}</div>
-                <div>{tt("② 左上角「扫一扫」扫描左侧二维码", "② Tap the scan icon (top-left) and scan the QR")}</div>
-                <div>{tt("③ 手机上点击确认即可登录", "③ Confirm on your phone to sign in")}</div>
+                <div>{tt("① Open NetEase Cloud Music on your phone")}</div>
+                <div>{tt("② Tap the scan icon (top-left) and scan the QR")}</div>
+                <div>{tt("③ Confirm on your phone to sign in")}</div>
               </div>
               <Focusable flow-children="row" style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <PrimaryButton onClick={() => setRefreshNonce((n) => n + 1)}><FaSync size={12} /> {tt("刷新二维码", "Refresh QR")}</PrimaryButton>
-                <Chip onClick={manualCheck}>{checking ? tt("检测中…", "Checking…") : tt("我已在手机确认 ✓", "Confirmed on phone ✓")}</Chip>
+                <PrimaryButton onClick={() => setRefreshNonce((n) => n + 1)}><FaSync size={12} /> {tt("Refresh QR")}</PrimaryButton>
+                <Chip onClick={manualCheck}>{checking ? tt("Checking…") : tt("Confirmed on phone ✓")}</Chip>
               </Focusable>
             </div>
           </div>
         ) : method === "pass" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 420 }}>
-            <TextField value={account} onChange={(e) => setAccount(e.target.value)} label={tt("手机号 / 邮箱", "Phone / Email")} placeholder={tt("手机号 或 邮箱", "Phone or email")} />
-            <TextField value={pwd} onChange={(e) => setPwd(e.target.value)} bIsPassword label={tt("密码", "Password")} placeholder={tt("密码", "Password")} />
+            <TextField value={account} onChange={(e) => setAccount(e.target.value)} label={tt("Phone / Email")} placeholder={tt("Phone or email")} />
+            <TextField value={pwd} onChange={(e) => setPwd(e.target.value)} bIsPassword label={tt("Password")} placeholder={tt("Password")} />
             <div style={{ marginTop: 4 }}>
-              <PrimaryButton onClick={submitPass}>{busy ? tt("登录中…", "Signing in…") : tt("登 录", "Sign in")}</PrimaryButton>
+              <PrimaryButton onClick={submitPass}>{busy ? tt("Signing in…") : tt("Sign in")}</PrimaryButton>
             </div>
             {msg && <div style={{ fontSize: 13, color: COLORS.sub }}>{msg}</div>}
           </div>
@@ -606,9 +608,9 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
             </div>
             <TextField value={cookieStr} onChange={(e) => setCookieStr(e.target.value)} placeholder="MUSIC_U=xxxxx; __csrf=xxxxx; ..." />
             <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-               <PrimaryButton onClick={submitCookie}>{busy ? tt("登录中…", "Signing in…") : tt("用 Cookie 登录", "Sign in with Cookie")}</PrimaryButton>
-              <Chip onClick={pickCookieFile}>{tt("选择文件导入", "Import file")}</Chip>
-              <Chip onClick={refreshLogin}>{tt("刷新登录状态", "Refresh status")}</Chip>
+               <PrimaryButton onClick={submitCookie}>{busy ? tt("Signing in…") : tt("Sign in with Cookie")}</PrimaryButton>
+              <Chip onClick={pickCookieFile}>{tt("Import file")}</Chip>
+              <Chip onClick={refreshLogin}>{tt("Refresh status")}</Chip>
             </Focusable>
             {msg && <div style={{ fontSize: 13, color: COLORS.sub }}>{msg}</div>}
           </div>
@@ -617,7 +619,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
         {/* 诊断日志 */}
         <div style={{ marginTop: 22, borderTop: `1px solid ${COLORS.border}`, paddingTop: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <Chip onClick={loadLog}>{showLog ? tt("隐藏诊断日志", "Hide logs") : tt("查看诊断日志", "View logs")}</Chip>
+            <Chip onClick={loadLog}>{showLog ? tt("Hide logs") : tt("View logs")}</Chip>
             {logPath && <span style={{ fontSize: 11.5, color: COLORS.dim }}>{logPath}</span>}
           </div>
           {showLog && (
@@ -642,7 +644,7 @@ export function PlaylistView({ id, nav }: { id: number; nav: NavFns }) {
   const { data, loading, error } = useAsync<Playlist>(() => api.playlistDetail(id), [id]);
   if (loading) return <Loading />;
   if (error) return <ErrorText text={error} />;
-  if (!data) return <Loading text={tt("歌单不存在", "Playlist not found")} />;
+  if (!data) return <Loading text={tt("Playlist not found")} />;
   const tracks = data.tracks || [];
   return (
     <div>
@@ -676,7 +678,7 @@ export function AlbumView({ id }: { id: number }) {
   const { data, loading, error } = useAsync(() => api.album(id), [id]);
   if (loading) return <Loading />;
   if (error) return <ErrorText text={error} />;
-  if (!data) return <Loading text={tt("专辑不存在", "Album not found")} />;
+  if (!data) return <Loading text={tt("Album not found")} />;
   const { album, songs } = data;
   return (
     <div>
@@ -706,7 +708,7 @@ export function ArtistView({ id, nav }: { id: number; nav: NavFns }) {
   const albums = useAsync<Album[]>(() => api.artistAlbums(id, 20), [id]);
   if (loading) return <Loading />;
   if (error) return <ErrorText text={error} />;
-  if (!data) return <Loading text={tt("歌手不存在", "Artist not found")} />;
+  if (!data) return <Loading text={tt("Artist not found")} />;
   const { artist, hotSongs } = data;
   return (
     <div>
@@ -723,10 +725,10 @@ export function ArtistView({ id, nav }: { id: number; nav: NavFns }) {
         </div>
       </div>
 
-      <SectionTitle>{tt("热门歌曲", "Top songs")}</SectionTitle>
+      <SectionTitle>{tt("Top songs")}</SectionTitle>
       <SongList tracks={hotSongs} onPlay={(t) => playFrom(hotSongs, t)} />
 
-      <SectionTitle>{tt("专辑", "Albums")}</SectionTitle>
+      <SectionTitle>{tt("Albums")}</SectionTitle>
       {albums.loading ? <Loading /> : albums.error ? <ErrorText text={albums.error} /> : (
         <CardRow>
           {(albums.data || []).map((a) => (

@@ -42,7 +42,7 @@ export function NowPlaying() {
       const r = await api.like(trackId, !liked);
       if (r && ((r as any).ok || (r as any).code === 200)) {
         setLiked(!liked);
-        toaster.toast({ title: !liked ? tt("已收藏", "Added to favorites") : tt("已取消收藏", "Removed from favorites"), body: s.track?.name || "" });
+        toaster.toast({ title: !liked ? tt("Added to favorites") : tt("Removed from favorites"), body: s.track?.name || "" });
       }
     } catch { /* ignore */ }
   };
@@ -83,7 +83,7 @@ export function NowPlaying() {
 
           {/* 控制键一排 */}
           <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, padding: "8px 0 4px" }}>
-            <IconButton onClick={toggleLike} size={34} active={liked} label={liked ? tt("取消喜欢", "Unlike") : tt("喜欢", "Like")}>
+            <IconButton onClick={toggleLike} size={34} active={liked} label={liked ? tt("Unlike") : tt("Like")}>
               {liked ? <FaHeart size={13} color="#ff5b5b" /> : <FaRegHeart size={13} />}
             </IconButton>
             <IconButton onClick={() => player.prev()} size={38}><FaStepBackward size={15} /></IconButton>
@@ -108,21 +108,21 @@ export function NowPlaying() {
         </>
       ) : (
         <div style={{ padding: "12px 4px", color: COLORS.sub, fontSize: 13, lineHeight: 1.6 }}>
-          {tt("还没有在播放的歌～", "Nothing playing yet.")}<br />{tt("去「浏览 / 搜索音乐」里挑一首吧 🎵", "Pick a song in Browse / Search 🎵")}
+          {tt("Nothing playing yet.")}<br />{tt("Pick a song in Browse / Search 🎵")}
         </div>
       )}
 
       <PanelSectionRow>
-        <ButtonItem layout="below" onClick={() => Navigation.Navigate(ROUTE)}>{tt("浏览 / 搜索音乐", "Browse / Search music")}</ButtonItem>
+        <ButtonItem layout="below" onClick={() => Navigation.Navigate(ROUTE)}>{tt("Browse / Search music")}</ButtonItem>
       </PanelSectionRow>
       {s.track && (
         <PanelSectionRow>
-          <ButtonItem layout="below" onClick={() => Navigation.Navigate(NOW_ROUTE)}>{tt("打开全屏播放页", "Open full screen player")}</ButtonItem>
+          <ButtonItem layout="below" onClick={() => Navigation.Navigate(NOW_ROUTE)}>{tt("Open full screen player")}</ButtonItem>
         </PanelSectionRow>
       )}
       {auth && !auth.loggedIn && (
         <PanelSectionRow>
-          <ButtonItem layout="below" onClick={() => Navigation.Navigate(ROUTE)}>{tt("未登录 · 点此扫码/Cookie 登录", "Not logged in · tap to sign in")}</ButtonItem>
+          <ButtonItem layout="below" onClick={() => Navigation.Navigate(ROUTE)}>{tt("Not logged in · tap to sign in")}</ButtonItem>
         </PanelSectionRow>
       )}
       <PanelSectionRow>

@@ -62,7 +62,7 @@ export function SectionTitle({ children, right }: { children: any; right?: any }
 
 export function Loading({ text }: { text?: string }) {
   const tt = useT();
-  return <div style={{ padding: 24, color: COLORS.sub, fontSize: 14, textAlign: "center" }}>{text ?? tt("加载中…", "Loading…")}</div>;
+  return <div style={{ padding: 24, color: COLORS.sub, fontSize: 14, textAlign: "center" }}>{text ?? tt("Loading…")}</div>;
 }
 
 export function ErrorText({ text }: { text: string }) {
@@ -110,13 +110,13 @@ export function TrackMenu({ onOpenAlbum }: { onOpenAlbum?: (id: number) => void 
         <div style={{ fontSize: 15, color: COLORS.text, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
         <div style={{ fontSize: 12, color: COLORS.sub, marginTop: 4, marginBottom: 6 }}>{t.artist}</div>
         <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
-          <MenuBtn onClick={() => act(() => player.playNext(t))}>{tt("＋ 下一首播放", "＋ Play next")}</MenuBtn>
-          <MenuBtn onClick={() => act(async () => { try { await api.like(t.id, true); toaster.toast({ title: tt("已收藏", "Added to favorites"), body: t.name }); } catch { /* ignore */ } })}>{tt("♥ 收藏", "♥ Favorite")}</MenuBtn>
+          <MenuBtn onClick={() => act(() => player.playNext(t))}>{tt("＋ Play next")}</MenuBtn>
+          <MenuBtn onClick={() => act(async () => { try { await api.like(t.id, true); toaster.toast({ title: tt("Added to favorites"), body: t.name }); } catch { /* ignore */ } })}>{tt("♥ Favorite")}</MenuBtn>
         </div>
         {onOpenAlbum && t.albumId ? (
-          <MenuBtn onClick={() => act(() => onOpenAlbum(t.albumId as number))}>{tt("💿 查看专辑", "💿 View album")}</MenuBtn>
+          <MenuBtn onClick={() => act(() => onOpenAlbum(t.albumId as number))}>{tt("💿 View album")}</MenuBtn>
         ) : null}
-        <MenuBtn onClick={closeTrackMenu}>{tt("取消", "Cancel")}</MenuBtn>
+        <MenuBtn onClick={closeTrackMenu}>{tt("Cancel")}</MenuBtn>
       </Focusable>
     </div>
   );
@@ -194,7 +194,7 @@ export function SongList({
     };
   }, []);
 
-  if (!tracks || !tracks.length) return <Loading text={tt("暂无歌曲", "No songs")} />;
+  if (!tracks || !tracks.length) return <Loading text={tt("No songs")} />;
 
   // 小列表直接渲染；大列表做「虚拟列表」，只渲染可视窗口 + 上下缓冲，避免 DOM 过多
   if (tracks.length <= 80) {
@@ -272,7 +272,7 @@ export function PlayAllButton({ onClick, count }: { onClick: () => void; count?:
       }}
     >
       <FaPlay size={12} />
-      {tt("播放全部", "Play all")}{count ? ` (${count})` : ""}
+      {tt("Play all")}{count ? ` (${count})` : ""}
     </Focusable>
   );
 }
@@ -295,7 +295,7 @@ export function MiniBar({ onExpand }: { onExpand?: () => void }) {
           {s.track.name}
         </div>
         <div style={{ fontSize: 12, color: COLORS.sub, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          {s.track.artist}{s.loading ? " · " + tt("加载中…", "loading…") : s.error ? " · " + tt("无法播放", "unplayable") : ""}
+          {s.track.artist}{s.loading ? " · " + tt("loading…") : s.error ? " · " + tt("unplayable") : ""}
         </div>
       </div>
       <IconButton onClick={() => player.prev()} size={34}><FaStepBackward size={14} /></IconButton>
@@ -303,7 +303,7 @@ export function MiniBar({ onExpand }: { onExpand?: () => void }) {
         {s.playing ? <FaPause size={16} /> : <FaPlay size={16} />}
       </IconButton>
       <IconButton onClick={() => player.next()} size={34}><FaStepForward size={14} /></IconButton>
-      <IconButton onClick={() => (onExpand ? onExpand() : Navigation.Navigate(NOW_ROUTE))} size={34} label={tt("全屏播放页", "Full screen player")}><FaExpand size={13} /></IconButton>
+      <IconButton onClick={() => (onExpand ? onExpand() : Navigation.Navigate(NOW_ROUTE))} size={34} label={tt("Full screen player")}><FaExpand size={13} /></IconButton>
       <div style={{ width: 120, display: "flex", alignItems: "center", gap: 6 }}>
         <FaVolumeUp size={13} color={COLORS.sub} />
         <input
@@ -325,10 +325,10 @@ export function ModeIcon({ mode }: { mode: string }) {
 
 export function modeLabel(mode: string): string {
   switch (mode) {
-    case "one": return tr("单曲循环", "Repeat one");
-    case "shuffle": return tr("随机播放", "Shuffle");
-    case "order": return tr("顺序播放", "In order");
-    default: return tr("列表循环", "Repeat all");
+    case "one": return tr("Repeat one");
+    case "shuffle": return tr("Shuffle");
+    case "order": return tr("In order");
+    default: return tr("Repeat all");
   }
 }
 

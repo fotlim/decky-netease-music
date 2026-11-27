@@ -164,12 +164,12 @@ export function NowPlayingPage(props: any = {}) {
       if (r && (r.ok || (r as any).code === 200)) {
         setLiked(next);
         try { if (!LIKED_SET) LIKED_SET = new Set(); next ? LIKED_SET.add(id) : LIKED_SET.delete(id); } catch { /* ignore */ }
-        toaster.toast({ title: next ? tt("已收藏", "Added to favorites") : tt("已取消收藏", "Removed from favorites"), body: s.track?.name || "" });
+        toaster.toast({ title: next ? tt("Added to favorites") : tt("Removed from favorites"), body: s.track?.name || "" });
       } else {
-        toaster.toast({ title: tt("收藏失败", "Failed to favorite"), body: tt("返回码 ", "code ") + String((r as any)?.code ?? r) });
+        toaster.toast({ title: tt("Failed to favorite"), body: tt("code ") + String((r as any)?.code ?? r) });
       }
     } catch (e: any) {
-      toaster.toast({ title: tt("收藏失败", "Failed to favorite"), body: String(e?.message || e) });
+      toaster.toast({ title: tt("Failed to favorite"), body: String(e?.message || e) });
     }
   };
 
@@ -241,7 +241,7 @@ export function NowPlayingPage(props: any = {}) {
           <Focusable onClick={doBack} onActivate={doBack} style={{ width: 36, height: 36, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.1)", cursor: "pointer" }}>
             <FaChevronLeft size={16} />
           </Focusable>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.75)" }}>{tt("正在播放", "Now playing")}</div>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.75)" }}>{tt("Now playing")}</div>
         </Focusable>
 
         <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 28, marginTop: 12 }}>
@@ -253,7 +253,7 @@ export function NowPlayingPage(props: any = {}) {
             </div>
             <div style={{ marginTop: 8, marginBottom: 2, minWidth: 0, width: "100%", textAlign: "center" }}>
               <div style={{ width: "100%", fontSize: 20, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {s.track?.name || tt("未在播放", "Nothing playing")}
+                {s.track?.name || tt("Nothing playing")}
               </div>
               <div style={{ width: "100%", fontSize: 12.5, color: "rgba(255,255,255,0.65)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {s.track?.artist || ""}{(s.track as any)?.album ? ` · ${(s.track as any).album}` : ""}
@@ -281,7 +281,7 @@ export function NowPlayingPage(props: any = {}) {
             </div>
 
             <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 6 }}>
-              <IconButton onClick={toggleLike} size={32} active={liked} label={liked ? tt("取消喜欢", "Unlike") : tt("喜欢", "Like")}>
+              <IconButton onClick={toggleLike} size={32} active={liked} label={liked ? tt("Unlike") : tt("Like")}>
                 {liked ? <FaHeart size={13} color="#ff5b5b" /> : <FaRegHeart size={13} />}
               </IconButton>
               <IconButton onClick={() => player.prev()} size={34}><FaStepBackward size={14} /></IconButton>
@@ -296,9 +296,9 @@ export function NowPlayingPage(props: any = {}) {
 
             {s.track && (
               <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-                <SmallAction onClick={() => player.playNext(s.track as any)}>{tt("＋ 下一首播放", "＋ Play next")}</SmallAction>
+                <SmallAction onClick={() => player.playNext(s.track as any)}>{tt("＋ Play next")}</SmallAction>
                 {onOpenAlbum && s.track.albumId ? (
-                  <SmallAction onClick={() => onOpenAlbum(s.track!.albumId as number)}>{tt("💿 查看专辑", "💿 View album")}</SmallAction>
+                  <SmallAction onClick={() => onOpenAlbum(s.track!.albumId as number)}>{tt("💿 View album")}</SmallAction>
                 ) : null}
               </Focusable>
             )}
@@ -318,7 +318,7 @@ export function NowPlayingPage(props: any = {}) {
               }}
             >
               {lines.length === 0 ? (
-                <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: 16 }}>{s.track ? tt("暂无歌词", "No lyrics") : ""}</div>
+                <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: 16 }}>{s.track ? tt("No lyrics") : ""}</div>
               ) : lines.map((l, i) => {
                 const st = lineStyle(i - active);
                 const tt = trFor[i];

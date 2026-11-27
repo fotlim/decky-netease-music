@@ -1,3 +1,4 @@
+import { getLang } from "./i18n";
 export const COLORS = {
   bg: "#0f1620",
   panel: "#16212d",
@@ -28,8 +29,9 @@ export function fmtTime(sec: number): string {
 /** 播放量格式化 */
 export function fmtCount(n: number): string {
   if (!n || n <= 0) return "0";
-  if (n >= 100000000) return (n / 100000000).toFixed(1) + "亿";
-  if (n >= 10000) return (n / 10000).toFixed(1) + "万";
+  const en = getLang() === "en";
+  if (n >= 100000000) return (n / 100000000).toFixed(1) + (en ? "B" : "亿");
+  if (n >= 10000) return (n / 10000).toFixed(1) + (en ? "M" : "万");
   return String(n);
 }
 

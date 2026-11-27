@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { toaster } from "@decky/api";
 import { api } from "./backend";
 import type { Track } from "./types";
+import { t } from "./i18n";
 
 function toastError(msg: string) {
-  try { toaster.toast({ title: "播放失败", body: msg }); } catch { /* ignore */ }
+  try { toaster.toast({ title: t("Playback failed"), body: msg }); } catch { /* ignore */ }
 }
 
 export type PlayMode = "order" | "all" | "one" | "shuffle";
@@ -68,8 +69,8 @@ class Player {
     a.addEventListener("ended", () => this.onEnded());
     a.addEventListener("error", () => {
       if (a.src) {
-        this.set({ error: "音频加载失败，可能是版权或网络问题", playing: false, loading: false });
-        toastError("音频加载失败（版权或网络）");
+        this.set({ error: t("Audio failed to load (copyright or network)"), playing: false, loading: false });
+        toastError(t("Audio failed to load (copyright or network)"));
       }
     });
     this.audio = a;
@@ -112,8 +113,8 @@ class Player {
       this.set({ track: { ...track, ...full }, duration: (full.duration || track.duration || 0) / 1000 });
       const url = res?.url?.url || "";
       if (!url) {
-        this.set({ loading: false, playing: false, error: "该歌曲无法播放（可能需要登录 / VIP，或暂无版权）" });
-        toastError("该歌曲无法播放（可能需要登录 / VIP）");
+        this.set({ loading: false, playing: false, error: t("This track can't be played (login/VIP, or no copyright)") });
+        toastError(t("This track can't be played (login/VIP)"));
         return;
       }
       const a = this.ensureAudio();
@@ -123,7 +124,7 @@ class Player {
       if (token === this.reqToken) this.set({ loading: false, playing: true });
     } catch (e: any) {
       if (token === this.reqToken) {
-        this.set({ loading: false, playing: false, error: String(e?.message || e || "播放失败") });
+        this.set({ loading: false, playing: false, error: String(e?.message || e || t("Playback failed")) });
       }
     }
   }
