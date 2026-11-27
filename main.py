@@ -16,6 +16,8 @@ import functools
 import traceback
 import aiohttp
 from aiohttp import web
+import socket
+import secrets
 
 _PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
 if _PLUGIN_DIR not in sys.path:
@@ -75,23 +77,38 @@ button.primary{background:#ec4141;border-color:#ec4141;font-weight:600}button.da
 <div class="row"><button id="paste"></button><button id="save" class="primary"></button><button id="refresh"></button><button id="logout" class="danger"></button></div>
 <div id="msg"></div></div><script>
 const zh=navigator.language.toLowerCase().startsWith('zh');const T=(a,b)=>zh?a:b;const $=i=>document.getElementById(i);
+const token=new URLSearchParams(location.search).get('token')||'';const TQ='?token='+encodeURIComponent(token);
 $('t').textContent=T('网易云登录管理','NetEase Login Manager');
 $('paste').textContent=T('从剪贴板粘贴','Paste from clipboard');
 $('save').textContent=T('保存 Cookie','Save cookie');
 $('refresh').textContent=T('刷新状态','Refresh');
 $('logout').textContent=T('退出登录','Log out');
-async function load(){try{const r=await fetch('/api/status');const j=await r.json();const on=!!j.loggedIn;const p=j.profile||{};
+async function load(){try{const r=await fetch('/api/status'+TQ);const j=await r.json();const on=!!j.loggedIn;const p=j.profile||{};
 $('nm').textContent=on?(p.nickname||T('已登录','Signed in')):T('未登录','Not signed in');
 $('uid').textContent=on&&p.userId?('UID '+p.userId):'';
 $('ck').textContent=on&&j.musicU?(T('Cookie: ','Cookie: ')+j.musicU):'';
 $('av').src=on&&p.avatarUrl?p.avatarUrl:'';
 $('bd').textContent=on?T('已登录','Signed in'):T('未登录','Signed out');$('bd').className='badge '+(on?'on':'off');}catch(e){$('msg').textContent=T('读取状态失败','Failed to load status');}}
 $('paste').onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t)$('c').value=t;}catch(e){alert(T('无法读取剪贴板，请手动粘贴','Cannot read clipboard, paste manually'));}};
-$('save').onclick=async()=>{$('msg').textContent=T('保存中…','Saving…');try{const r=await fetch('/api/cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookie:$('c').value})});const j=await r.json();$('msg').textContent=j.ok?T('已保存！','Saved!'):(T('失败：','Failed: ')+(j.error||''));$('msg').style.color=j.ok?'#3ddc84':'#ff6b6b';await load();}catch(e){$('msg').textContent=T('网络错误','Network error');}};
+$('save').onclick=async()=>{$('msg').textContent=T('保存中…','Saving…');try{const r=await fetch('/api/cookie'+TQ,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookie:$('c').value})});const j=await r.json();$('msg').textContent=j.ok?T('已保存！','Saved!'):(T('失败：','Failed: ')+(j.error||''));$('msg').style.color=j.ok?'#3ddc84':'#ff6b6b';await load();}catch(e){$('msg').textContent=T('网络错误','Network error');}};
 $('refresh').onclick=load;
-$('logout').onclick=async()=>{ $('msg').textContent=T('退出中…','Logging out…'); try{await fetch('/api/logout',{method:'POST'});$('msg').textContent=T('已退出','Logged out');await load();}catch(e){$('msg').textContent=T('网络错误','Network error');}};
+$('logout').onclick=async()=>{ $('msg').textContent=T('退出中…','Logging out…'); try{await fetch('/api/logout'+TQ,{method:'POST'});$('msg').textContent=T('已退出','Logged out');await load();}catch(e){$('msg').textContent=T('网络错误','Network error');}};
 load();
 </script></body></html>"""
+
+
+def _lan_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except Exception:
+        return "127.0.0.1"
+    finally:
+        try:
+            s.close()
+        except Exception:
+            pass
 
 
 def _safe(fn):
@@ -121,6 +138,8 @@ class Plugin:
     quality = "standard"
     paste_runner = None
     paste_port = 0
+    paste_token = ""
+    paste_ip = "127.0.0.1"
 
     # ------------------------------------------------------------------
     # 日志
@@ -182,6 +201,8 @@ class Plugin:
     async def _start_paste_server(self):
         try:
             port = 39101
+            self.paste_token = secrets.token_hex(8)
+            self.paste_ip = _lan_ip()
             app = web.Application()
             app.router.add_get("/", self._login_page)
             app.router.add_get("/login", self._login_page)
@@ -191,21 +212,30 @@ class Plugin:
             app.router.add_post("/api/logout", self._login_logout)
             runner = web.AppRunner(app)
             await runner.setup()
-            site = web.TCPSite(runner, "127.0.0.1", port)
+            # 绑定 0.0.0.0，允许同一局域网内的电脑浏览器访问
+            site = web.TCPSite(runner, "0.0.0.0", port)
             await site.start()
             self.paste_runner = runner
             self.paste_port = port
-            self._log("paste server on 127.0.0.1:%d" % port)
+            self._log("login web ui on http://%s:%d/login token=%s" % (self.paste_ip, port, self.paste_token))
         except Exception as e:
             self._log("paste server err %r" % (e,))
+
+    def _auth(self, request):
+        tok = request.query.get("token") or request.headers.get("X-Token") or ""
+        return bool(self.paste_token) and tok == self.paste_token
 
     async def _paste_index(self, request):
         return web.Response(text=_PASTE_HTML, content_type="text/html", charset="utf-8")
 
     async def _login_page(self, request):
+        if not self._auth(request):
+            return web.Response(status=403, text="403 Forbidden: missing/invalid token")
         return web.Response(text=_LOGIN_HTML, content_type="text/html", charset="utf-8")
 
     async def _login_status(self, request):
+        if not self._auth(request):
+            return web.json_response({"error": "forbidden"}, status=403)
         try:
             st = await self.client.status()
         except Exception as e:
@@ -220,6 +250,8 @@ class Plugin:
         return web.json_response({"loggedIn": bool(st.get("loggedIn")), "profile": prof, "musicU": masked})
 
     async def _login_logout(self, request):
+        if not self._auth(request):
+            return web.json_response({"error": "forbidden"}, status=403)
         try:
             await self.client.logout()
         except Exception as e:
@@ -247,7 +279,9 @@ class Plugin:
             return web.json_response({"ok": False, "error": repr(e)}, status=500)
 
     async def paste_server_url(self):
-        return {"url": ("http://127.0.0.1:%d/login" % self.paste_port) if self.paste_port else ""}
+        if not self.paste_port:
+            return {"url": ""}
+        return {"url": "http://%s:%d/login?token=%s" % (self.paste_ip, self.paste_port, self.paste_token)}
 
     async def _unload(self):
         try:

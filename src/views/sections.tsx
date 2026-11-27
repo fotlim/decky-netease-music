@@ -361,10 +361,13 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
   const openWebLogin = async () => {
     try {
       const r = await api.pasteServerUrl();
-      if (r.url) Navigation.NavigateToExternalWeb(r.url);
+      if (r.url) { setWebUrl(r.url); Navigation.NavigateToExternalWeb(r.url); }
       else setMsg(tt("登录管理页未启动", "Login manager not running"));
     } catch (e: any) { setMsg(tt("打开失败：", "Open failed: ") + String(e?.message || e)); }
   };
+  useEffect(() => {
+    api.pasteServerUrl().then((r) => setWebUrl(r.url)).catch(() => {});
+  }, []);
   const [method, setMethod] = useState<"qr" | "pass" | "cookie">("qr");
   const [qrUrl, setQrUrl] = useState("");
   const [qrKey, setQrKey] = useState("");
@@ -376,6 +379,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [msg, setMsg] = useState("");
   const [checking, setChecking] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [webUrl, setWebUrl] = useState("");
 
   const applyCheck = (code: number, message?: string): boolean => {
     if (code === 803) {
@@ -605,7 +609,13 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 640 }}>
-            <PrimaryButton onClick={openWebLogin}>{tt("打开浏览器登录管理页（推荐）", "Open login manager in browser (recommended)")}</PrimaryButton>
+            <PrimaryButton onClick={openWebLogin}>{tt("在本机浏览器打开登录管理页", "Open login manager in this browser")}</PrimaryButton>
+            {webUrl && (
+              <div style={{ fontSize: 12.5, color: COLORS.sub, lineHeight: 1.7, wordBreak: "break-all" }}>
+                {tt("电脑浏览器打开（需同一局域网）：", "Open on PC browser (same LAN): ")}
+                <span style={{ color: COLORS.accent }}>{webUrl}</span>
+              </div>
+            )}
             <div style={{ fontSize: 13, color: COLORS.sub, lineHeight: 1.9 }}>
               扫码被风控(8821)时用此法最稳，免打字，任选其一：
               <br />① 电脑运行 <b>导入Cookie到Deck</b> 脚本推入 → 回到这里点 <b>刷新登录状态</b>；
