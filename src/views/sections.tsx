@@ -12,6 +12,7 @@ import { COLORS, fmtCount } from "../utils";
 import {
   AlbumArt, CardRow, ErrorText, Loading, MediaCard, PlayAllButton, SectionTitle, SongList,
 } from "../components";
+import { useT } from "../i18n";
 
 export interface NavFns {
   toPlaylist: (id: number) => void;
@@ -76,22 +77,23 @@ function PrimaryButton({ onClick, children }: { onClick: () => void; children: a
 // 首页
 // ---------------------------------------------------------------------------
 export function HomeSection({ nav }: { nav: NavFns }) {
+  const tt = useT();
   const pz = useAsync<Playlist[]>(() => api.personalized(12), []);
   const tl = useAsync<Toplist[]>(() => api.toplists(), []);
   const rec = useAsync<Track[]>(() => api.recommendSongs(15), []);
 
   return (
     <div>
-      <SectionTitle>推荐歌单</SectionTitle>
+      <SectionTitle>{tt("推荐歌单", "Recommended playlists")}</SectionTitle>
       {pz.loading ? <Loading /> : pz.error ? <ErrorText text={pz.error} /> : (
         <CardRow>
           {(pz.data || []).map((p) => (
-            <MediaCard key={p.id} title={p.name} subtitle={`${fmtCount(p.playCount)} 次播放`} cover={p.cover} onClick={() => nav.toPlaylist(p.id)} />
+            <MediaCard key={p.id} title={p.name} subtitle={`${fmtCount(p.playCount)} ${tt("次播放", "plays")}`} cover={p.cover} onClick={() => nav.toPlaylist(p.id)} />
           ))}
         </CardRow>
       )}
 
-      <SectionTitle>排行榜</SectionTitle>
+      <SectionTitle>{tt("排行榜", "Charts")}</SectionTitle>
       {tl.loading ? <Loading /> : tl.error ? <ErrorText text={tl.error} /> : (
         <CardRow>
           {(tl.data || []).map((t) => (
@@ -100,7 +102,7 @@ export function HomeSection({ nav }: { nav: NavFns }) {
         </CardRow>
       )}
 
-      <SectionTitle>新歌推荐</SectionTitle>
+      <SectionTitle>{tt("新歌推荐", "New songs")}</SectionTitle>
       {rec.loading ? <Loading /> : rec.error ? <ErrorText text={rec.error} /> : (
         <SongList tracks={rec.data || []} showCover onPlay={(t) => playFrom(rec.data || [], t)} />
       )}
@@ -278,6 +280,7 @@ function SearchResults({ res, nav }: { res: SearchResult; nav: NavFns }) {
 // 我的（含登录）
 // ---------------------------------------------------------------------------
 export function MineSection({ nav }: { nav: NavFns }) {
+  const tt = useT();
   const st = useAsync<AuthStatus>(() => api.status(), []);
   const uid = st.data?.loggedIn ? st.data.profile?.userId : undefined;
   const pls = useAsync<Playlist[]>(async () => (uid ? api.userPlaylists(uid) : []), [uid]);
@@ -330,7 +333,7 @@ export function MineSection({ nav }: { nav: NavFns }) {
         if (!likedPl) return null;
         return (
           <>
-            <SectionTitle>我的收藏</SectionTitle>
+            <SectionTitle>{tt("我的收藏", "My favorites")}</SectionTitle>
             <CardRow>
               <MediaCard title={likedPl.name || "我喜欢的音乐"} subtitle={`${likedPl.trackCount} 首`} cover={likedPl.cover} onClick={() => nav.toPlaylist(likedPl.id)} />
             </CardRow>
@@ -338,7 +341,7 @@ export function MineSection({ nav }: { nav: NavFns }) {
         );
       })()}
 
-      <SectionTitle>我的歌单</SectionTitle>
+      <SectionTitle>{tt("我的歌单", "My playlists")}</SectionTitle>
       {pls.loading ? <Loading /> : pls.error ? <ErrorText text={pls.error} /> : (
         <CardRow>
           {(pls.data || []).filter((p) => !p.name.includes("喜欢")).map((p) => (
@@ -354,6 +357,7 @@ export function MineSection({ nav }: { nav: NavFns }) {
 // 登录面板：扫码 / 账号密码
 // ---------------------------------------------------------------------------
 export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
+  const tt = useT();
   const [method, setMethod] = useState<"qr" | "pass" | "cookie">("qr");
   const [qrUrl, setQrUrl] = useState("");
   const [qrKey, setQrKey] = useState("");
@@ -539,18 +543,18 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
             color: "#fff", fontSize: 22, boxShadow: "0 6px 18px rgba(236,65,65,0.45)",
           }}>♪</div>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.text }}>登录网易云音乐</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.text }}>{tt("登录网易云音乐", "Sign in to NetEase Music")}</div>
             <div style={{ fontSize: 12.5, color: COLORS.sub, marginTop: 2 }}>
-              登录后可解锁 VIP 曲目、查看「我的歌单」与更高音质
+              {tt("登录后可解锁 VIP 曲目、查看「我的歌单」与更高音质", "Sign in to unlock VIP tracks, your playlists and higher audio quality")}
             </div>
           </div>
         </div>
 
         {/* 方式切换 */}
         <Focusable flow-children="row" style={{ display: "flex", gap: 10, marginBottom: 22 }}>
-          <Chip active={method === "qr"} onClick={() => setMethod("qr")}><FaQrcode size={12} /> 扫码登录</Chip>
-          <Chip active={method === "pass"} onClick={() => setMethod("pass")}><FaKey size={12} /> 账号密码</Chip>
-          <Chip active={method === "cookie"} onClick={() => setMethod("cookie")}><FaKey size={12} /> Cookie 登录</Chip>
+          <Chip active={method === "qr"} onClick={() => setMethod("qr")}><FaQrcode size={12} /> {tt("扫码登录", "QR code")}</Chip>
+          <Chip active={method === "pass"} onClick={() => setMethod("pass")}><FaKey size={12} /> {tt("账号密码", "Password")}</Chip>
+          <Chip active={method === "cookie"} onClick={() => setMethod("cookie")}><FaKey size={12} /> {tt("Cookie 登录", "Cookie")}</Chip>
         </Focusable>
 
         {method === "qr" ? (
@@ -563,7 +567,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
             }}>
               {svg
                 ? <div style={{ width: "100%", height: "100%" }} dangerouslySetInnerHTML={{ __html: svg }} />
-                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#8a8a8a", fontSize: 13 }}>二维码加载中…</div>}
+                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#8a8a8a", fontSize: 13 }}>{tt("二维码加载中…", "Loading QR…")}</div>}
             </div>
 
             {/* 状态 + 引导 */}
@@ -573,22 +577,22 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
                 <span style={{ fontSize: 15.5, color: "#fff", fontWeight: 600 }}>{qrMsg}</span>
               </div>
               <div style={{ fontSize: 13, color: COLORS.sub, lineHeight: 2 }}>
-                <div>① 打开手机「网易云音乐」</div>
-                <div>② 左上角「扫一扫」扫描左侧二维码</div>
-                <div>③ 手机上点击确认即可登录</div>
+                <div>{tt("① 打开手机「网易云音乐」", "① Open NetEase Cloud Music on your phone")}</div>
+                <div>{tt("② 左上角「扫一扫」扫描左侧二维码", "② Tap the scan icon (top-left) and scan the QR")}</div>
+                <div>{tt("③ 手机上点击确认即可登录", "③ Confirm on your phone to sign in")}</div>
               </div>
               <Focusable flow-children="row" style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <PrimaryButton onClick={() => setRefreshNonce((n) => n + 1)}><FaSync size={12} /> 刷新二维码</PrimaryButton>
-                <Chip onClick={manualCheck}>{checking ? "检测中…" : "我已在手机确认 ✓"}</Chip>
+                <PrimaryButton onClick={() => setRefreshNonce((n) => n + 1)}><FaSync size={12} /> {tt("刷新二维码", "Refresh QR")}</PrimaryButton>
+                <Chip onClick={manualCheck}>{checking ? tt("检测中…", "Checking…") : tt("我已在手机确认 ✓", "Confirmed on phone ✓")}</Chip>
               </Focusable>
             </div>
           </div>
         ) : method === "pass" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 420 }}>
-            <TextField value={account} onChange={(e) => setAccount(e.target.value)} label="手机号 / 邮箱" placeholder="手机号 或 邮箱" />
-            <TextField value={pwd} onChange={(e) => setPwd(e.target.value)} bIsPassword label="密码" placeholder="密码" />
+            <TextField value={account} onChange={(e) => setAccount(e.target.value)} label={tt("手机号 / 邮箱", "Phone / Email")} placeholder={tt("手机号 或 邮箱", "Phone or email")} />
+            <TextField value={pwd} onChange={(e) => setPwd(e.target.value)} bIsPassword label={tt("密码", "Password")} placeholder={tt("密码", "Password")} />
             <div style={{ marginTop: 4 }}>
-              <PrimaryButton onClick={submitPass}>{busy ? "登录中…" : "登 录"}</PrimaryButton>
+              <PrimaryButton onClick={submitPass}>{busy ? tt("登录中…", "Signing in…") : tt("登 录", "Sign in")}</PrimaryButton>
             </div>
             {msg && <div style={{ fontSize: 13, color: COLORS.sub }}>{msg}</div>}
           </div>
@@ -602,9 +606,9 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
             </div>
             <TextField value={cookieStr} onChange={(e) => setCookieStr(e.target.value)} placeholder="MUSIC_U=xxxxx; __csrf=xxxxx; ..." />
             <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <PrimaryButton onClick={submitCookie}>{busy ? "登录中…" : "用 Cookie 登录"}</PrimaryButton>
-              <Chip onClick={pickCookieFile}>选择文件导入</Chip>
-              <Chip onClick={refreshLogin}>刷新登录状态</Chip>
+               <PrimaryButton onClick={submitCookie}>{busy ? tt("登录中…", "Signing in…") : tt("用 Cookie 登录", "Sign in with Cookie")}</PrimaryButton>
+              <Chip onClick={pickCookieFile}>{tt("选择文件导入", "Import file")}</Chip>
+              <Chip onClick={refreshLogin}>{tt("刷新登录状态", "Refresh status")}</Chip>
             </Focusable>
             {msg && <div style={{ fontSize: 13, color: COLORS.sub }}>{msg}</div>}
           </div>
@@ -613,7 +617,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
         {/* 诊断日志 */}
         <div style={{ marginTop: 22, borderTop: `1px solid ${COLORS.border}`, paddingTop: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <Chip onClick={loadLog}>{showLog ? "隐藏诊断日志" : "查看诊断日志"}</Chip>
+            <Chip onClick={loadLog}>{showLog ? tt("隐藏诊断日志", "Hide logs") : tt("查看诊断日志", "View logs")}</Chip>
             {logPath && <span style={{ fontSize: 11.5, color: COLORS.dim }}>{logPath}</span>}
           </div>
           {showLog && (
@@ -634,10 +638,11 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
 // 歌单详情
 // ---------------------------------------------------------------------------
 export function PlaylistView({ id, nav }: { id: number; nav: NavFns }) {
+  const tt = useT();
   const { data, loading, error } = useAsync<Playlist>(() => api.playlistDetail(id), [id]);
   if (loading) return <Loading />;
   if (error) return <ErrorText text={error} />;
-  if (!data) return <Loading text="歌单不存在" />;
+  if (!data) return <Loading text={tt("歌单不存在", "Playlist not found")} />;
   const tracks = data.tracks || [];
   return (
     <div>
@@ -667,10 +672,11 @@ export function PlaylistView({ id, nav }: { id: number; nav: NavFns }) {
 // 专辑详情
 // ---------------------------------------------------------------------------
 export function AlbumView({ id }: { id: number }) {
+  const tt = useT();
   const { data, loading, error } = useAsync(() => api.album(id), [id]);
   if (loading) return <Loading />;
   if (error) return <ErrorText text={error} />;
-  if (!data) return <Loading text="专辑不存在" />;
+  if (!data) return <Loading text={tt("专辑不存在", "Album not found")} />;
   const { album, songs } = data;
   return (
     <div>
@@ -695,11 +701,12 @@ export function AlbumView({ id }: { id: number }) {
 // 歌手详情
 // ---------------------------------------------------------------------------
 export function ArtistView({ id, nav }: { id: number; nav: NavFns }) {
+  const tt = useT();
   const { data, loading, error } = useAsync(() => api.artist(id), [id]);
   const albums = useAsync<Album[]>(() => api.artistAlbums(id, 20), [id]);
   if (loading) return <Loading />;
   if (error) return <ErrorText text={error} />;
-  if (!data) return <Loading text="歌手不存在" />;
+  if (!data) return <Loading text={tt("歌手不存在", "Artist not found")} />;
   const { artist, hotSongs } = data;
   return (
     <div>
@@ -716,10 +723,10 @@ export function ArtistView({ id, nav }: { id: number; nav: NavFns }) {
         </div>
       </div>
 
-      <SectionTitle>热门歌曲</SectionTitle>
+      <SectionTitle>{tt("热门歌曲", "Top songs")}</SectionTitle>
       <SongList tracks={hotSongs} onPlay={(t) => playFrom(hotSongs, t)} />
 
-      <SectionTitle>专辑</SectionTitle>
+      <SectionTitle>{tt("专辑", "Albums")}</SectionTitle>
       {albums.loading ? <Loading /> : albums.error ? <ErrorText text={albums.error} /> : (
         <CardRow>
           {(albums.data || []).map((a) => (

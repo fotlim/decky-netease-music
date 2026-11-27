@@ -4,6 +4,7 @@ import { FaChevronLeft } from "react-icons/fa";
 import { COLORS } from "../utils";
 import { MiniBar, TrackMenu } from "../components";
 import { NowPlayingPage } from "./NowPlayingPage";
+import { useT, useLang, setLang } from "../i18n";
 import {
   HomeSection, SearchSection, MineSection, PlaylistView, AlbumView, ArtistView, NavFns,
 } from "./sections";
@@ -23,6 +24,9 @@ const TABS = [
 ] as const;
 
 export function Library() {
+  const tt = useT();
+  const lang = useLang();
+  const tabLabel = (k: string) => (k === "home" ? tt("发现", "Discover") : k === "search" ? tt("搜索", "Search") : tt("我的", "Mine"));
   const [stack, setStack] = useState<View[]>([{ name: "home" }]);
   const [showNow, setShowNow] = useState(false);
   const view = stack[stack.length - 1];
@@ -67,8 +71,13 @@ export function Library() {
         >
           <FaChevronLeft size={16} />
         </Focusable>
-        <div style={{ fontSize: 20, fontWeight: 700 }}>网易云音乐</div>
+        <div style={{ fontSize: 20, fontWeight: 700 }}>{tt("网易云音乐", "NetEase Music")}</div>
         <div style={{ flex: 1 }} />
+        <Focusable
+          onClick={() => setLang(lang === "zh" ? "en" : "zh")}
+          onActivate={() => setLang(lang === "zh" ? "en" : "zh")}
+          style={{ padding: "7px 12px", borderRadius: 16, fontSize: 13, cursor: "pointer", background: "rgba(255,255,255,0.08)", color: "#fff" }}
+        >{lang === "zh" ? "EN" : "中文"}</Focusable>
         {TABS.map((t) => {
           const active = view.name === t.k && stack.length === 1;
           return (
@@ -81,7 +90,7 @@ export function Library() {
                 background: active ? COLORS.accent : "rgba(255,255,255,0.08)",
                 color: "#fff", fontWeight: active ? 600 : 400,
               }}
-            >{t.label}</Focusable>
+            >{tabLabel(t.k)}</Focusable>
           );
         })}
       </Focusable>

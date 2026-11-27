@@ -1,6 +1,6 @@
 {
   "name": "decky-netease-music",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "网易云音乐 Decky Loader 插件 - 简洁、高效、低占用",
   "type": "module",
   "scripts": {
@@ -16,8 +16,10 @@
   },
   "devDependencies": {
     "@decky/rollup": "^1.0.2",
-    "@types/react": "18.3.31",
-    "@types/react-dom": "18.3.7",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
     "rollup": "^4.68.8",
     "typescript": "^5.9.3"
   },

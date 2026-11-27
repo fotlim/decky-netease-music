@@ -3,4 +3,5 @@ __pycache__/
 *.pyc
 *.log
 *.zip
+dist/
 .DS_Store

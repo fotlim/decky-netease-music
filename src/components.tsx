@@ -10,6 +10,7 @@ import {
   FaPlay, FaPause, FaStepBackward, FaStepForward,
   FaRandom, FaRedo, FaListUl, FaVolumeUp, FaExpand,
 } from "react-icons/fa";
+import { t as tr, useT } from "./i18n";
 
 // ---------------------------------------------------------------------------
 // 基础控件
@@ -59,8 +60,9 @@ export function SectionTitle({ children, right }: { children: any; right?: any }
   );
 }
 
-export function Loading({ text = "加载中…" }: { text?: string }) {
-  return <div style={{ padding: 24, color: COLORS.sub, fontSize: 14, textAlign: "center" }}>{text}</div>;
+export function Loading({ text }: { text?: string }) {
+  const tt = useT();
+  return <div style={{ padding: 24, color: COLORS.sub, fontSize: 14, textAlign: "center" }}>{text ?? tt("加载中…", "Loading…")}</div>;
 }
 
 export function ErrorText({ text }: { text: string }) {
@@ -86,6 +88,7 @@ function MenuBtn({ onClick, children }: { onClick: () => void; children: any }) 
 }
 
 export function TrackMenu({ onOpenAlbum }: { onOpenAlbum?: (id: number) => void }) {
+  const tt = useT();
   const [t, setT] = useState<Track | null>(_menuTrack);
   useEffect(() => {
     const f = () => setT(_menuTrack);
@@ -107,13 +110,13 @@ export function TrackMenu({ onOpenAlbum }: { onOpenAlbum?: (id: number) => void 
         <div style={{ fontSize: 15, color: COLORS.text, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
         <div style={{ fontSize: 12, color: COLORS.sub, marginTop: 4, marginBottom: 6 }}>{t.artist}</div>
         <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
-          <MenuBtn onClick={() => act(() => player.playNext(t))}>＋ 下一首播放</MenuBtn>
-          <MenuBtn onClick={() => act(async () => { try { await api.like(t.id, true); toaster.toast({ title: "已收藏", body: t.name }); } catch { /* ignore */ } })}>♥ 收藏</MenuBtn>
+          <MenuBtn onClick={() => act(() => player.playNext(t))}>{tt("＋ 下一首播放", "＋ Play next")}</MenuBtn>
+          <MenuBtn onClick={() => act(async () => { try { await api.like(t.id, true); toaster.toast({ title: tt("已收藏", "Added to favorites"), body: t.name }); } catch { /* ignore */ } })}>{tt("♥ 收藏", "♥ Favorite")}</MenuBtn>
         </div>
         {onOpenAlbum && t.albumId ? (
-          <MenuBtn onClick={() => act(() => onOpenAlbum(t.albumId as number))}>💿 查看专辑</MenuBtn>
+          <MenuBtn onClick={() => act(() => onOpenAlbum(t.albumId as number))}>{tt("💿 查看专辑", "💿 View album")}</MenuBtn>
         ) : null}
-        <MenuBtn onClick={closeTrackMenu}>取消</MenuBtn>
+        <MenuBtn onClick={closeTrackMenu}>{tt("取消", "Cancel")}</MenuBtn>
       </Focusable>
     </div>
   );
@@ -172,6 +175,7 @@ export function SongList({
 }) {
   const hookId = useCurrentTrackId();
   const activeId = currentId ?? hookId;
+  const tt = useT();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewH, setViewH] = useState(540);
@@ -190,7 +194,7 @@ export function SongList({
     };
   }, []);
 
-  if (!tracks || !tracks.length) return <Loading text="暂无歌曲" />;
+  if (!tracks || !tracks.length) return <Loading text={tt("暂无歌曲", "No songs")} />;
 
   // 小列表直接渲染；大列表做「虚拟列表」，只渲染可视窗口 + 上下缓冲，避免 DOM 过多
   if (tracks.length <= 80) {
@@ -256,6 +260,7 @@ export function CardRow({ children }: { children: any }) {
 }
 
 export function PlayAllButton({ onClick, count }: { onClick: () => void; count?: number }) {
+  const tt = useT();
   return (
     <Focusable
       onActivate={onClick}
@@ -267,7 +272,7 @@ export function PlayAllButton({ onClick, count }: { onClick: () => void; count?:
       }}
     >
       <FaPlay size={12} />
-      播放全部{count ? ` (${count})` : ""}
+      {tt("播放全部", "Play all")}{count ? ` (${count})` : ""}
     </Focusable>
   );
 }
@@ -277,6 +282,7 @@ export function PlayAllButton({ onClick, count }: { onClick: () => void; count?:
 // ---------------------------------------------------------------------------
 export function MiniBar({ onExpand }: { onExpand?: () => void }) {
   const s = usePlayer();
+  const tt = useT();
   if (!s.track) return null;
   return (
     <Focusable flow-children="row" style={{
@@ -289,7 +295,7 @@ export function MiniBar({ onExpand }: { onExpand?: () => void }) {
           {s.track.name}
         </div>
         <div style={{ fontSize: 12, color: COLORS.sub, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          {s.track.artist}{s.loading ? " · 加载中…" : s.error ? " · 无法播放" : ""}
+          {s.track.artist}{s.loading ? " · " + tt("加载中…", "loading…") : s.error ? " · " + tt("无法播放", "unplayable") : ""}
         </div>
       </div>
       <IconButton onClick={() => player.prev()} size={34}><FaStepBackward size={14} /></IconButton>
@@ -297,7 +303,7 @@ export function MiniBar({ onExpand }: { onExpand?: () => void }) {
         {s.playing ? <FaPause size={16} /> : <FaPlay size={16} />}
       </IconButton>
       <IconButton onClick={() => player.next()} size={34}><FaStepForward size={14} /></IconButton>
-      <IconButton onClick={() => (onExpand ? onExpand() : Navigation.Navigate(NOW_ROUTE))} size={34} label="全屏播放页"><FaExpand size={13} /></IconButton>
+      <IconButton onClick={() => (onExpand ? onExpand() : Navigation.Navigate(NOW_ROUTE))} size={34} label={tt("全屏播放页", "Full screen player")}><FaExpand size={13} /></IconButton>
       <div style={{ width: 120, display: "flex", alignItems: "center", gap: 6 }}>
         <FaVolumeUp size={13} color={COLORS.sub} />
         <input
@@ -319,10 +325,10 @@ export function ModeIcon({ mode }: { mode: string }) {
 
 export function modeLabel(mode: string): string {
   switch (mode) {
-    case "one": return "单曲循环";
-    case "shuffle": return "随机播放";
-    case "order": return "顺序播放";
-    default: return "列表循环";
+    case "one": return tr("单曲循环", "Repeat one");
+    case "shuffle": return tr("随机播放", "Shuffle");
+    case "order": return tr("顺序播放", "In order");
+    default: return tr("列表循环", "Repeat all");
   }
 }
 

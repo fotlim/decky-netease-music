@@ -5,6 +5,7 @@ import { NowPlayingPage } from "./views/NowPlayingPage";
 import { Library } from "./views/Library";
 import { player } from "./player";
 import { ROUTE, NOW_ROUTE } from "./route";
+import { getLang } from "./i18n";
 
 export default definePlugin(() => {
   // 注册音乐库 / 全屏播放页路由
@@ -14,7 +15,7 @@ export default definePlugin(() => {
   routerHook.addRoute(NOW_ROUTE, NowPlayingPage);
 
   return {
-    name: "网易云音乐",
+    name: getLang() === "zh" ? "网易云音乐" : "NetEase Music",
     icon: <FaMusic />,
     content: <NowPlaying />,
     onDismount() {

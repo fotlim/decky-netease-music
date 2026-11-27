@@ -723,11 +723,25 @@ class NeteaseClient:
         return await self.status()
 
     async def import_cookie_file(self, path):
+        # 安全：只允许读取「插件运行时目录」或「用户主目录」下的文件，
+        # 且内容必须是含 MUSIC_U 的 Cookie 文本，避免把任意文件当凭据读取。
         try:
-            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            real = os.path.realpath(path)
+            home = os.path.realpath(os.path.expanduser("~"))
+            runtime = os.path.realpath(os.path.dirname(self.cookie_path))
+            inside = (real == runtime) or real.startswith(runtime + os.sep) or real.startswith(home + os.sep)
+            if not inside:
+                return {"loggedIn": False, "error": "不允许读取该路径的文件"}
+            if not os.path.isfile(real):
+                return {"loggedIn": False, "error": "文件不存在"}
+            if os.path.getsize(real) > 64 * 1024:
+                return {"loggedIn": False, "error": "文件过大，不是有效的 Cookie 文件"}
+            with open(real, "r", encoding="utf-8", errors="ignore") as f:
                 text = f.read()
         except Exception as e:
             return {"loggedIn": False, "error": "读取文件失败: %r" % (e,)}
+        if "MUSIC_U" not in text:
+            return {"loggedIn": False, "error": "该文件不含 MUSIC_U，不是网易云 Cookie 文件"}
         return await self.login_cookie(text)
 
     async def logout(self):
