@@ -28,6 +28,7 @@ export const api = {
   loginCookie: (cookie: string) => call<[string], AuthStatus>("login_cookie", cookie),
   reloadCookies: () => call<[], AuthStatus>("reload_cookies"),
   importCookieFile: (path: string) => call<[string], AuthStatus>("import_cookie_file", path),
+  pasteServerUrl: () => call<[], { url: string }>("paste_server_url"),
   logout: () => call<[], { ok: boolean }>("logout"),
   userPlaylists: (uid: number) => call<[number], Playlist[]>("user_playlists", uid),
 

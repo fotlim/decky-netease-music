@@ -14,6 +14,8 @@ import time
 import asyncio
 import functools
 import traceback
+import aiohttp
+from aiohttp import web
 
 _PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
 if _PLUGIN_DIR not in sys.path:
@@ -27,6 +29,29 @@ try:
 except Exception:
     netease = None
     _IMPORT_ERR = traceback.format_exc()
+
+
+_PASTE_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NetEase Cookie</title><style>
+body{margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif;background:#0e1319;color:#e6ebf1;display:flex;min-height:100vh;align-items:center;justify-content:center}
+.card{width:min(720px,92vw);background:#18202a;border:1px solid #2a3441;border-radius:16px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+h1{font-size:20px;margin:0 0 6px}p{color:#93a1ae;font-size:13px;line-height:1.7;margin:0 0 16px}
+textarea{width:100%;min-height:140px;box-sizing:border-box;background:#0e1319;color:#cfe0ee;border:1px solid #2a3441;border-radius:10px;padding:12px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.row{display:flex;gap:10px;margin-top:14px}button{padding:10px 18px;border-radius:10px;border:1px solid #2a3441;background:#26313d;color:#fff;font-size:14px;cursor:pointer}
+button.primary{background:#ec4141;border-color:#ec4141;font-weight:600}#msg{margin-top:12px;font-size:14px}
+</style></head><body><div class="card"><h1 id="t"></h1><p id="d"></p>
+<textarea id="c" placeholder="MUSIC_U=...; __csrf=..."></textarea>
+<div class="row"><button id="paste"></button><button id="ok" class="primary"></button></div>
+<div id="msg"></div></div><script>
+const zh=navigator.language.toLowerCase().startsWith('zh');const T=(a,b)=>zh?a:b;
+document.getElementById('t').textContent=T('导入网易云 Cookie','Import NetEase Cookie');
+document.getElementById('d').textContent=T('在本页粘贴 Cookie（浏览器里可复制粘贴），提交后回到插件点“刷新登录状态”。','Paste your cookie here (clipboard works in browser). After submit, go back to the plugin and tap \\"Refresh status\\".');
+const ta=document.getElementById('c');const msg=document.getElementById('msg');
+document.getElementById('paste').textContent=T('从剪贴板粘贴','Paste from clipboard');
+document.getElementById('ok').textContent=T('提交','Submit');
+document.getElementById('paste').onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t)ta.value=t;}catch(e){alert(T('无法读取剪贴板，请手动粘贴','Cannot read clipboard, paste manually'));}};
+document.getElementById('ok').onclick=async()=>{msg.textContent=T('提交中…','Submitting…');try{const r=await fetch('/cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookie:ta.value})});const j=await r.json();msg.textContent=j.ok?T('成功！回到插件点“刷新登录状态”。','Done! Go back to the plugin and tap \\"Refresh status\\".'):(T('失败：','Failed: ')+(j.error||''));msg.style.color=j.ok?'#3ddc84':'#ff6b6b';}catch(e){msg.textContent=T('网络错误','Network error');}};
+</script></body></html>"""
 
 
 def _safe(fn):
@@ -54,6 +79,8 @@ class Plugin:
     settings_path = ""
     log_file = ""
     quality = "standard"
+    paste_runner = None
+    paste_port = 0
 
     # ------------------------------------------------------------------
     # 日志
@@ -104,8 +131,62 @@ class Plugin:
         except Exception:
             self.init_error = traceback.format_exc()
             self._log("NeteaseClient 初始化失败:\n%s" % self.init_error)
+        try:
+            await self._start_paste_server()
+        except Exception as e:
+            self._log("paste server start err %r" % (e,))
+
+    # ------------------------------------------------------------------
+    # 浏览器粘贴页（cookie 输入；浏览器上下文里剪贴板可用）
+    # ------------------------------------------------------------------
+    async def _start_paste_server(self):
+        try:
+            port = 39101
+            app = web.Application()
+            app.router.add_get("/", self._paste_index)
+            app.router.add_post("/cookie", self._paste_cookie)
+            runner = web.AppRunner(app)
+            await runner.setup()
+            site = web.TCPSite(runner, "127.0.0.1", port)
+            await site.start()
+            self.paste_runner = runner
+            self.paste_port = port
+            self._log("paste server on 127.0.0.1:%d" % port)
+        except Exception as e:
+            self._log("paste server err %r" % (e,))
+
+    async def _paste_index(self, request):
+        return web.Response(text=_PASTE_HTML, content_type="text/html", charset="utf-8")
+
+    async def _paste_cookie(self, request):
+        try:
+            data = await request.json()
+        except Exception:
+            data = {}
+        cookie = str((data or {}).get("cookie") or "").strip()
+        if "MUSIC_U" not in cookie:
+            return web.json_response({"ok": False, "error": "缺少 MUSIC_U，不是有效的网易云 Cookie"}, status=400)
+        try:
+            path = getattr(self.client, "cookie_path", None)
+            if not path:
+                return web.json_response({"ok": False, "error": "未初始化"}, status=500)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(cookie)
+            st = await self.client.reload_cookies()
+            self._log("paste cookie saved, loggedIn=%s" % st.get("loggedIn"))
+            return web.json_response({"ok": True, "loggedIn": bool(st.get("loggedIn")), "profile": st.get("profile")})
+        except Exception as e:
+            return web.json_response({"ok": False, "error": repr(e)}, status=500)
+
+    async def paste_server_url(self):
+        return {"url": ("http://127.0.0.1:%d/" % self.paste_port) if self.paste_port else ""}
 
     async def _unload(self):
+        try:
+            if self.paste_runner is not None:
+                await self.paste_runner.cleanup()
+        except Exception:
+            pass
         try:
             if self.client is not None:
                 await self.client.close()

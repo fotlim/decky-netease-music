@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Focusable, TextField } from "@decky/ui";
+import { Focusable, TextField, Navigation } from "@decky/ui";
 import { openFilePicker } from "@decky/api";
 import qrcode from "qrcode-generator";
 import {
@@ -410,7 +410,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
         if (applyCheck(r.code, r.message)) { done = true; if (timer) clearInterval(timer); }
       } catch { /* ignore poll errors */ }
     };
-    start().then(() => { timer = setInterval(poll, 3000); });
+    start().then(() => { timer = setInterval(poll, 5000); });
     return () => { alive = false; if (timer) clearInterval(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [method, refreshNonce]);
@@ -607,6 +607,13 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
             <TextField value={cookieStr} onChange={(e) => setCookieStr(e.target.value)} placeholder="MUSIC_U=xxxxx; __csrf=xxxxx; ..." />
             <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                <PrimaryButton onClick={submitCookie}>{busy ? tt("登录中…", "Signing in…") : tt("用 Cookie 登录", "Sign in with Cookie")}</PrimaryButton>
+              <Chip onClick={async () => {
+                try {
+                  const r = await api.pasteServerUrl();
+                  if (r.url) Navigation.NavigateToExternalWeb(r.url);
+                  else setMsg(tt("粘贴服务未启动", "Paste server not running"));
+                } catch (e: any) { setMsg(tt("打开失败：", "Open failed: ") + String(e?.message || e)); }
+              }}>{tt("浏览器粘贴页", "Browser paste page")}</Chip>
               <Chip onClick={pickCookieFile}>{tt("选择文件导入", "Import file")}</Chip>
               <Chip onClick={refreshLogin}>{tt("刷新登录状态", "Refresh status")}</Chip>
             </Focusable>
