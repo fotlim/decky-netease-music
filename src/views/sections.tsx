@@ -600,9 +600,9 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 640 }}>
             <div style={{ fontSize: 13, color: COLORS.sub, lineHeight: 1.9 }}>
               扫码被风控(8821)时用此法最稳，免打字，任选其一：
-              <br />① 电脑运行 <b>导入Cookie到Deck</b> 脚本推入 → 回到这里点 <b>刷新登录状态</b>；
-              <br />② 把 <b>cookie.txt</b> 放到 Deck，点 <b>选择文件导入</b>；
-              <br />③ 手动粘贴 <b>MUSIC_U</b>（浏览器 F12 → Application → Cookies）。
+              <br />① 电脑运行 <b>生成Cookie文件</b> 脚本，得到 <b>cookie.txt</b>；
+              <br />② 把 <b>cookie.txt</b> 传到 Deck，点 <b>选择文件导入</b>；
+              <br />③ 或手动粘贴 <b>MUSIC_U</b>（浏览器 F12 → Application → Cookies）。
             </div>
             <TextField value={cookieStr} onChange={(e) => setCookieStr(e.target.value)} placeholder="MUSIC_U=xxxxx; __csrf=xxxxx; ..." />
             <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>

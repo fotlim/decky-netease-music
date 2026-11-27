@@ -1,5 +1,8 @@
 # 更新日志 / Changelog
 
+## v1.5.21
+- 更新 Cookie 登录页说明：改为「电脑运行 **生成Cookie文件** 脚本得到 cookie.txt → 传到 Deck → 选择文件导入 / 手动粘贴 MUSIC_U」，不再提已移除的「导入Cookie到Deck」推送脚本。
+
 ## v1.5.20
 - **移除「浏览器 Web UI 登录管理」功能**（Steam 内置浏览器打开本地服务常报 502，不稳定）：删除后端 aiohttp 登录服务/接口与前端入口，Cookie 登录恢复为「输入 / 选择文件导入 / 刷新登录状态」。
 - 另外提供 **`生成Cookie文件.cmd`** 脚本：输入 `MUSIC_U`（可选 `__csrf`）生成 `cookie.txt`，由用户**手动传输**到 Deck 后导入（不再做一键推送）。
