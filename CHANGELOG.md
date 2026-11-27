@@ -1,5 +1,12 @@
 # 更新日志 / Changelog
 
+## v1.5.14
+- 按 Decky 商店维护者 review 修复：
+  - **恢复 TLS 证书校验**：移除 `ssl=False`，改用 `certifi` CA 的默认校验上下文（凭据走可信 TLS）。
+  - **SongList 大列表改虚拟滚动**：仅渲染可视窗口 + 缓冲，避免海量 DOM。
+  - **扫码轮询间隔 2s → 3s**，降低服务端压力。
+  - **升级依赖**：`@decky/ui` 4.x → **5.0.2**、`rollup`/`typescript` 到最新；`package.json` 版本 1.0.0 → 1.0.1。
+
 ## v1.5.13
 - 播放页封面恢复 180×180、歌名恢复 20px。
 

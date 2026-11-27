@@ -406,7 +406,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
         if (applyCheck(r.code, r.message)) { done = true; if (timer) clearInterval(timer); }
       } catch { /* ignore poll errors */ }
     };
-    start().then(() => { timer = setInterval(poll, 2000); });
+    start().then(() => { timer = setInterval(poll, 3000); });
     return () => { alive = false; if (timer) clearInterval(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [method, refreshNonce]);

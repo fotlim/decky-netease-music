@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Focusable, Navigation } from "@decky/ui";
 import { toaster } from "@decky/api";
 import type { Track } from "./types";
@@ -163,6 +163,8 @@ export function SongRow({
   );
 }
 
+const SONG_ROW_H = 55;
+
 export function SongList({
   tracks, onPlay, currentId, showCover = true,
 }: {
@@ -170,13 +172,53 @@ export function SongList({
 }) {
   const hookId = useCurrentTrackId();
   const activeId = currentId ?? hookId;
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewH, setViewH] = useState(540);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => setScrollTop(el.scrollTop);
+    const onResize = () => setViewH(el.clientHeight || 540);
+    onResize();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
   if (!tracks || !tracks.length) return <Loading text="暂无歌曲" />;
+
+  // 小列表直接渲染；大列表做「虚拟列表」，只渲染可视窗口 + 上下缓冲，避免 DOM 过多
+  if (tracks.length <= 80) {
+    return (
+      <Focusable flow-children="column" style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        {tracks.map((t, i) => (
+          <SongRow key={`${t.id}-${i}`} track={t} index={showCover ? i : undefined} active={activeId === t.id} onPlay={onPlay} showCover={showCover} />
+        ))}
+      </Focusable>
+    );
+  }
+
+  const total = tracks.length * SONG_ROW_H;
+  const start = Math.max(0, Math.floor(scrollTop / SONG_ROW_H) - 5);
+  const end = Math.min(tracks.length, Math.ceil((scrollTop + viewH) / SONG_ROW_H) + 5);
   return (
-    <Focusable flow-children="column" style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      {tracks.map((t, i) => (
-        <SongRow key={`${t.id}-${i}`} track={t} index={showCover ? i : undefined} active={activeId === t.id} onPlay={onPlay} showCover={showCover} />
-      ))}
-    </Focusable>
+    <div ref={scrollRef} style={{ overflowY: "auto", maxHeight: "calc(100vh - 230px)", position: "relative" }}>
+      <div style={{ height: total, position: "relative" }}>
+        {tracks.slice(start, end).map((t, i) => {
+          const idx = start + i;
+          return (
+            <div key={`${t.id}-${idx}`} style={{ position: "absolute", top: idx * SONG_ROW_H, left: 0, right: 0, height: SONG_ROW_H }}>
+              <SongRow track={t} index={showCover ? idx : undefined} active={activeId === t.id} onPlay={onPlay} showCover={showCover} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

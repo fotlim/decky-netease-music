@@ -580,12 +580,40 @@ function SongRow({ track, index, active, onPlay, showCover = true, }) {
                         }, children: [track.artist, track.album ? ` · ${track.album}` : ""] })] }), SP_JSX.jsx("div", { style: { fontSize: 12, color: COLORS.dim, marginLeft: 6 }, children: fmtDuration(track.duration) }), SP_JSX.jsx(DFL.Focusable, { onClick: (e) => { e.stopPropagation(); openTrackMenu(track); }, onActivate: (e) => { if (e && e.stopPropagation)
                     e.stopPropagation(); openTrackMenu(track); }, style: { width: 30, height: 30, borderRadius: 15, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.06)", color: COLORS.sub, fontSize: 16, flexShrink: 0, cursor: "pointer" }, children: "\u22EF" })] }));
 }
+const SONG_ROW_H = 55;
 function SongList({ tracks, onPlay, currentId, showCover = true, }) {
     const hookId = useCurrentTrackId();
     const activeId = currentId ?? hookId;
+    const scrollRef = SP_REACT.useRef(null);
+    const [scrollTop, setScrollTop] = SP_REACT.useState(0);
+    const [viewH, setViewH] = SP_REACT.useState(540);
+    SP_REACT.useEffect(() => {
+        const el = scrollRef.current;
+        if (!el)
+            return;
+        const onScroll = () => setScrollTop(el.scrollTop);
+        const onResize = () => setViewH(el.clientHeight || 540);
+        onResize();
+        el.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", onResize);
+        return () => {
+            el.removeEventListener("scroll", onScroll);
+            window.removeEventListener("resize", onResize);
+        };
+    }, []);
     if (!tracks || !tracks.length)
         return SP_JSX.jsx(Loading, { text: "\u6682\u65E0\u6B4C\u66F2" });
-    return (SP_JSX.jsx(DFL.Focusable, { "flow-children": "column", style: { display: "flex", flexDirection: "column", gap: 1 }, children: tracks.map((t, i) => (SP_JSX.jsx(SongRow, { track: t, index: showCover ? i : undefined, active: activeId === t.id, onPlay: onPlay, showCover: showCover }, `${t.id}-${i}`))) }));
+    // 小列表直接渲染；大列表做「虚拟列表」，只渲染可视窗口 + 上下缓冲，避免 DOM 过多
+    if (tracks.length <= 80) {
+        return (SP_JSX.jsx(DFL.Focusable, { "flow-children": "column", style: { display: "flex", flexDirection: "column", gap: 1 }, children: tracks.map((t, i) => (SP_JSX.jsx(SongRow, { track: t, index: showCover ? i : undefined, active: activeId === t.id, onPlay: onPlay, showCover: showCover }, `${t.id}-${i}`))) }));
+    }
+    const total = tracks.length * SONG_ROW_H;
+    const start = Math.max(0, Math.floor(scrollTop / SONG_ROW_H) - 5);
+    const end = Math.min(tracks.length, Math.ceil((scrollTop + viewH) / SONG_ROW_H) + 5);
+    return (SP_JSX.jsx("div", { ref: scrollRef, style: { overflowY: "auto", maxHeight: "calc(100vh - 230px)", position: "relative" }, children: SP_JSX.jsx("div", { style: { height: total, position: "relative" }, children: tracks.slice(start, end).map((t, i) => {
+                const idx = start + i;
+                return (SP_JSX.jsx("div", { style: { position: "absolute", top: idx * SONG_ROW_H, left: 0, right: 0, height: SONG_ROW_H }, children: SP_JSX.jsx(SongRow, { track: t, index: showCover ? idx : undefined, active: activeId === t.id, onPlay: onPlay, showCover: showCover }) }, `${t.id}-${idx}`));
+            }) }) }));
 }
 // ---------------------------------------------------------------------------
 // 卡片（歌单 / 专辑）
@@ -3529,7 +3557,7 @@ function LoginPanel({ onLoggedIn }) {
             }
             catch { /* ignore poll errors */ }
         };
-        start().then(() => { timer = setInterval(poll, 2000); });
+        start().then(() => { timer = setInterval(poll, 3000); });
         return () => { alive = false; if (timer)
             clearInterval(timer); };
         // eslint-disable-next-line react-hooks/exhaustive-deps

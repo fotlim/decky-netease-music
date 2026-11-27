@@ -16,6 +16,11 @@ import base64
 import hashlib
 import random
 import socket
+import ssl
+try:
+    import certifi  # Decky loader 自带证书库，冻结环境也可靠
+except Exception:  # pragma: no cover
+    certifi = None
 import urllib.parse
 
 import aiohttp
@@ -347,11 +352,20 @@ class NeteaseClient:
         return self.cookies.get("__csrf", "")
 
     # -- http -------------------------------------------------------------
+    def _ssl_context(self):
+        # 强制校验证书；优先用 certifi 的 CA 包（Decky 自带）
+        try:
+            if certifi is not None:
+                return ssl.create_default_context(cafile=certifi.where())
+        except Exception:
+            pass
+        return ssl.create_default_context()
+
     def _get_session(self):
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=self.timeout),
-                connector=aiohttp.TCPConnector(ssl=False, family=socket.AF_INET),
+                connector=aiohttp.TCPConnector(ssl=self._ssl_context(), family=socket.AF_INET),
                 cookie_jar=aiohttp.DummyCookieJar(),
             )
         return self._session
