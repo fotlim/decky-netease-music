@@ -1,5 +1,8 @@
 # 更新日志 / Changelog
 
+## v1.5.23
+- **README 改为中英双语**：新增 `README.en.md`（English），`README.md` 顶部可中英切换；同时修正过时说明（Releases 安装、Cookie 生成脚本、dist 不提交、i18n 等）。
+
 ## v1.5.22
 - Cookie 登录说明补充「生成Cookie文件脚本会自动打开浏览器登录并生成 cookie.txt」。
 - （配套脚本 `生成Cookie文件.cmd` 升级：自动唤起 Edge/Chrome 打开网易云登录页，登录后经 CDP 自动读取 `MUSIC_U` 并生成 `cookie.txt`。）
