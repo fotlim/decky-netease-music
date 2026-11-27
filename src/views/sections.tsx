@@ -358,6 +358,13 @@ export function MineSection({ nav }: { nav: NavFns }) {
 // ---------------------------------------------------------------------------
 export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
   const tt = useT();
+  const openWebLogin = async () => {
+    try {
+      const r = await api.pasteServerUrl();
+      if (r.url) Navigation.NavigateToExternalWeb(r.url);
+      else setMsg(tt("登录管理页未启动", "Login manager not running"));
+    } catch (e: any) { setMsg(tt("打开失败：", "Open failed: ") + String(e?.message || e)); }
+  };
   const [method, setMethod] = useState<"qr" | "pass" | "cookie">("qr");
   const [qrUrl, setQrUrl] = useState("");
   const [qrKey, setQrKey] = useState("");
@@ -598,6 +605,7 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 640 }}>
+            <PrimaryButton onClick={openWebLogin}>{tt("打开浏览器登录管理页（推荐）", "Open login manager in browser (recommended)")}</PrimaryButton>
             <div style={{ fontSize: 13, color: COLORS.sub, lineHeight: 1.9 }}>
               扫码被风控(8821)时用此法最稳，免打字，任选其一：
               <br />① 电脑运行 <b>导入Cookie到Deck</b> 脚本推入 → 回到这里点 <b>刷新登录状态</b>；
@@ -607,13 +615,6 @@ export function LoginPanel({ onLoggedIn }: { onLoggedIn: () => void }) {
             <TextField value={cookieStr} onChange={(e) => setCookieStr(e.target.value)} placeholder="MUSIC_U=xxxxx; __csrf=xxxxx; ..." />
             <Focusable flow-children="row" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                <PrimaryButton onClick={submitCookie}>{busy ? tt("登录中…", "Signing in…") : tt("用 Cookie 登录", "Sign in with Cookie")}</PrimaryButton>
-              <Chip onClick={async () => {
-                try {
-                  const r = await api.pasteServerUrl();
-                  if (r.url) Navigation.NavigateToExternalWeb(r.url);
-                  else setMsg(tt("粘贴服务未启动", "Paste server not running"));
-                } catch (e: any) { setMsg(tt("打开失败：", "Open failed: ") + String(e?.message || e)); }
-              }}>{tt("浏览器粘贴页", "Browser paste page")}</Chip>
               <Chip onClick={pickCookieFile}>{tt("选择文件导入", "Import file")}</Chip>
               <Chip onClick={refreshLogin}>{tt("刷新登录状态", "Refresh status")}</Chip>
             </Focusable>

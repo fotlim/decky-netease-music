@@ -54,6 +54,46 @@ document.getElementById('ok').onclick=async()=>{msg.textContent=T('提交中…'
 </script></body></html>"""
 
 
+_LOGIN_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NetEase Login Manager</title><style>
+body{margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif;background:#0e1319;color:#e6ebf1;display:flex;min-height:100vh;align-items:center;justify-content:center}
+.card{width:min(760px,94vw);background:#18202a;border:1px solid #2a3441;border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+h1{font-size:20px;margin:0 0 16px}
+.status{display:flex;align-items:center;gap:14px;background:#111823;border:1px solid #2a3441;border-radius:12px;padding:14px;margin-bottom:18px}
+.avatar{width:56px;height:56px;border-radius:10px;background:#26313d;object-fit:cover;flex-shrink:0}
+.sname{font-size:16px;font-weight:700}.suid{font-size:12px;color:#93a1ae;margin-top:3px}.scookie{font-size:12px;color:#6b7783;margin-top:3px}
+.badge{margin-left:auto;font-size:12px;padding:4px 10px;border-radius:999px}
+.on{background:rgba(61,220,132,.15);color:#3ddc84}.off{background:rgba(255,107,107,.15);color:#ff6b6b}
+textarea{width:100%;min-height:120px;box-sizing:border-box;background:#0e1319;color:#cfe0ee;border:1px solid #2a3441;border-radius:10px;padding:12px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}button{padding:10px 18px;border-radius:10px;border:1px solid #2a3441;background:#26313d;color:#fff;font-size:14px;cursor:pointer}
+button.primary{background:#ec4141;border-color:#ec4141;font-weight:600}button.danger{background:#3a2226;border-color:#7a3038;color:#ff9aa4}
+#msg{margin-top:12px;font-size:14px}
+</style></head><body><div class="card">
+<h1 id="t"></h1>
+<div class="status"><img class="avatar" id="av" alt=""><div><div class="sname" id="nm"></div><div class="suid" id="uid"></div><div class="scookie" id="ck"></div></div><div class="badge off" id="bd"></div></div>
+<textarea id="c" placeholder="MUSIC_U=...; __csrf=..."></textarea>
+<div class="row"><button id="paste"></button><button id="save" class="primary"></button><button id="refresh"></button><button id="logout" class="danger"></button></div>
+<div id="msg"></div></div><script>
+const zh=navigator.language.toLowerCase().startsWith('zh');const T=(a,b)=>zh?a:b;const $=i=>document.getElementById(i);
+$('t').textContent=T('网易云登录管理','NetEase Login Manager');
+$('paste').textContent=T('从剪贴板粘贴','Paste from clipboard');
+$('save').textContent=T('保存 Cookie','Save cookie');
+$('refresh').textContent=T('刷新状态','Refresh');
+$('logout').textContent=T('退出登录','Log out');
+async function load(){try{const r=await fetch('/api/status');const j=await r.json();const on=!!j.loggedIn;const p=j.profile||{};
+$('nm').textContent=on?(p.nickname||T('已登录','Signed in')):T('未登录','Not signed in');
+$('uid').textContent=on&&p.userId?('UID '+p.userId):'';
+$('ck').textContent=on&&j.musicU?(T('Cookie: ','Cookie: ')+j.musicU):'';
+$('av').src=on&&p.avatarUrl?p.avatarUrl:'';
+$('bd').textContent=on?T('已登录','Signed in'):T('未登录','Signed out');$('bd').className='badge '+(on?'on':'off');}catch(e){$('msg').textContent=T('读取状态失败','Failed to load status');}}
+$('paste').onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t)$('c').value=t;}catch(e){alert(T('无法读取剪贴板，请手动粘贴','Cannot read clipboard, paste manually'));}};
+$('save').onclick=async()=>{$('msg').textContent=T('保存中…','Saving…');try{const r=await fetch('/api/cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookie:$('c').value})});const j=await r.json();$('msg').textContent=j.ok?T('已保存！','Saved!'):(T('失败：','Failed: ')+(j.error||''));$('msg').style.color=j.ok?'#3ddc84':'#ff6b6b';await load();}catch(e){$('msg').textContent=T('网络错误','Network error');}};
+$('refresh').onclick=load;
+$('logout').onclick=async()=>{ $('msg').textContent=T('退出中…','Logging out…'); try{await fetch('/api/logout',{method:'POST'});$('msg').textContent=T('已退出','Logged out');await load();}catch(e){$('msg').textContent=T('网络错误','Network error');}};
+load();
+</script></body></html>"""
+
+
 def _safe(fn):
     """给 RPC 方法套一层：捕获异常 -> 记录日志 + 回传真实错误文本。"""
     @functools.wraps(fn)
@@ -143,8 +183,12 @@ class Plugin:
         try:
             port = 39101
             app = web.Application()
-            app.router.add_get("/", self._paste_index)
+            app.router.add_get("/", self._login_page)
+            app.router.add_get("/login", self._login_page)
+            app.router.add_get("/api/status", self._login_status)
+            app.router.add_post("/api/cookie", self._paste_cookie)
             app.router.add_post("/cookie", self._paste_cookie)
+            app.router.add_post("/api/logout", self._login_logout)
             runner = web.AppRunner(app)
             await runner.setup()
             site = web.TCPSite(runner, "127.0.0.1", port)
@@ -157,6 +201,30 @@ class Plugin:
 
     async def _paste_index(self, request):
         return web.Response(text=_PASTE_HTML, content_type="text/html", charset="utf-8")
+
+    async def _login_page(self, request):
+        return web.Response(text=_LOGIN_HTML, content_type="text/html", charset="utf-8")
+
+    async def _login_status(self, request):
+        try:
+            st = await self.client.status()
+        except Exception as e:
+            return web.json_response({"loggedIn": False, "profile": None, "musicU": "", "error": repr(e)})
+        prof = st.get("profile") or {}
+        mu = ""
+        try:
+            mu = self.client.cookies.get("MUSIC_U", "") or ""
+        except Exception:
+            mu = ""
+        masked = (mu[:6] + "…" + mu[-6:]) if len(mu) > 16 else ("已设置" if mu else "")
+        return web.json_response({"loggedIn": bool(st.get("loggedIn")), "profile": prof, "musicU": masked})
+
+    async def _login_logout(self, request):
+        try:
+            await self.client.logout()
+        except Exception as e:
+            self._log("logout err %r" % (e,))
+        return await self._login_status(request)
 
     async def _paste_cookie(self, request):
         try:
@@ -179,7 +247,7 @@ class Plugin:
             return web.json_response({"ok": False, "error": repr(e)}, status=500)
 
     async def paste_server_url(self):
-        return {"url": ("http://127.0.0.1:%d/" % self.paste_port) if self.paste_port else ""}
+        return {"url": ("http://127.0.0.1:%d/login" % self.paste_port) if self.paste_port else ""}
 
     async def _unload(self):
         try:
