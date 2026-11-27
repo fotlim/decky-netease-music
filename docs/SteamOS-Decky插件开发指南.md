@@ -530,6 +530,56 @@ gh pr create --repo SteamDeckHomebrew/decky-plugin-database \
 
 ---
 
+## 14. 踩坑与解决记录（本项目实战）
+
+> 以下是开发/上架这个插件时**真实踩过**的坑，按主题整理，供做同类插件时参考。
+
+### 打包 / 安装
+| 问题 | 原因 | 解决 |
+|---|---|---|
+| 安装无反应 / 报 “No plugin.json found” | zip 结构不对：`plugin.json` 不在恰好一层目录 | zip 内必须是 `<folder>/plugin.json`（路径只含 1 个 `/`）；用脚本打包并校验 |
+| 装上了但功能全报 “Python Exception” | Decky 冻结 Python 无 `urllib/requests/http.cookiejar` | 后端网络只用 **aiohttp**（loader 自带）+ 标准库 |
+
+### 后端 / 安全
+| 问题 | 原因 | 解决 |
+|---|---|---|
+| 商店 review 打回：`ssl=False` 未校验证书 | 截图里 `aiohttp.TCPConnector(ssl=False)` | 用 `certifi` 的 `ssl.create_default_context()` 做证书校验 |
+| 后端能读任意文件当 Cookie | `import_cookie_file` 直接 `open(path)` | 限制目录（运行时目录/用户主目录）、≤64KB、内容必须含 `MUSIC_U` |
+| 扫码轮询过于频繁（服务器压力） | 2s 间隔 | 改为 3–5s |
+
+### 前端 / UI / 手柄
+| 问题 | 原因 | 解决 |
+|---|---|---|
+| QAM 顶部/底部被 Steam 状态栏/菜单栏遮 | 未处理安全区 | 根容器 `paddingTop/Bottom: calc(env(safe-area-inset-*) + Npx)` |
+| 自定义控件手柄点不动 | 未进焦点树 | 包 `Focusable` + 设置 `flow-children` |
+| QAM 面板被挤压（音量条变竖线） | 横向排版过挤 | 改成纵向多行布局 |
+| 大歌单卡顿 / 渲染海量 DOM | 一次性渲染所有行 | 虚拟列表：只渲染可视窗口 + 缓冲 |
+| 进度条与时长文字重叠 | 用了负 margin | 去掉负边距；时间行 `width:100%` |
+| 封面被裁掉 | `object-fit: cover` | 大封面改 `contain` |
+| Steam 虚拟键盘打不出中文（受控输入 + IME） | CEF/IME 限制 | 非受控输入 + 拼音联想搜索（`zhoujielun`） |
+| 游戏模式 `navigator.clipboard` 不可用；自建本地 Web UI 在 Steam 内置浏览器常 **502** | CEF/内嵌浏览器限制 | 放弃剪贴板/本地服务；改「生成 cookie.txt」脚本 + 手动导入 |
+
+### i18n / 依赖
+| 问题 | 原因 | 解决 |
+|---|---|---|
+| `t(zh,en)` 位置传参难扩展（review 打回） | 新增语言要改所有调用点 | **key + 词典**：英文源串作 key，各语言一份词典，调用点不变 |
+| 英文模式仍有中文残留 | 漏译 | 全量扫描中文字符串；默认英文、跟随系统语言可切换 |
+| React 相关依赖版本不符 | 商店要求 React 19.1.1 | `react/react-dom` 固定 19.1.1、`@types/react(-dom)` 19；`@decky/ui` 升 5.x |
+| 仓库里提交了 `dist/` | review 嫌噪音 | `.gitignore` 忽略 `dist/`，由商店构建时生成 |
+
+### 发布 / 商店 PR
+| 问题 | 原因 | 解决 |
+|---|---|---|
+| `git push` 到 github.com 被墙（`WinError 10053`/connection reset） | 网络 | 改用 **GitHub REST API** 提交（blobs→trees→commits→refs） |
+| 改了插件后 PR 没更新 | submodule 指针仍指旧 commit | 用 Git Trees API 把 `plugins/<name>` 的 gitlink 更新到新 sha，再 PATCH 分支并评论 |
+| CI `Build plugin` 一直 `waiting` | 首次贡献者 + `testing_env` 配了 `required_reviewers`（Plugin Review 团队） | 等维护者 Approve deployment；`testing_env` 只在 review 通过后才批 |
+| PR 模板要求 Testing 勾选 | `plugin_addition.md` 要求保留一行 | Python 后端保留 Stable/Beta 行（删 Preview）；第三方测试由测试者勾 |
+| Release 资产中文名被规范化（`生成Cookie文件.exe`→`Cookie.exe`） | GitHub 资产名限制 | 用 ASCII 资产名（如 `NetEase-Cookie-Generator.exe`） |
+| 打 exe 后双击闪退 | cmd 里引用中文 `.ps1` 名，编码/路径解析失败 | 脚本名改 ASCII (`gen-cookie.ps1`)，cmd 内容纯 ASCII，用 ps2exe 打包 |
+| 维护者说“像 AI 写的” | 担心不理解/难维护 | 诚实沟通，能解释设计取舍，按 review 重构（本项目最终被 APPROVED） |
+
+---
+
 ## 附录 A：常用 API 速查
 
 **前端 `@decky/api`**
